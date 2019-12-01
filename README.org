@@ -1,0 +1,8 @@
+#+AUTHOR: Simon Stoltze
+#+EMAIL: sstoltze@gmail.com
+#+DATE: 2019-12-01
+#+OPTIONS: toc:nil title:nil author:nil email:nil date:nil creator:nil
+* Advent of code solutions
+This is small project made to gather various [[https://adventofcode.com][Advent of Code]] solutions written over the years in various languages.
+
+The solutions have often been used to learn or practice a new language, so you should not expect high quality.
