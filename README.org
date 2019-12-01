@@ -6,3 +6,4 @@
 This is small project made to gather various [[https://adventofcode.com][Advent of Code]] solutions written over the years in various languages.
 
 The solutions have often been used to learn or practice a new language, so you should not expect high quality.
+They have also been written over several years, on different systems, and using various tooling, so nothing is guaranteed to be up to date or even runnable.
