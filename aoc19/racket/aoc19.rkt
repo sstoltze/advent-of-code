@@ -41,22 +41,24 @@
   (string->intcode-program (file->string f)))
 
 (define (string->intcode-program s)
-  (list->vector (map string->number
-                     (string-split s #px"[\\s,]+"))))
+  (for/hash ([i (in-naturals)]
+             [p (in-list (map string->number
+                             (string-split s #px"[\\s,]+")))])
+    (values i p)))
 
 (define (intcode-parameter program ptr relative-pointer modes)
   (lambda (m [immediate #f])
     (if immediate
-        (vector-ref program (+ ptr m))
+        (hash-ref program (+ ptr m) 0)
         (case (hash-ref modes m 0)
-          [(2)  (vector-ref program (+ relative-pointer ptr m))]
-          [(1)  (vector-ref program (+ ptr m))]
-          [else (vector-ref program (vector-ref program (+ ptr m)))]))))
+          [(2)  (hash-ref program (+ relative-pointer ptr m) 0)]
+          [(1)  (hash-ref program (+ ptr m) 0)]
+          [else (hash-ref program (hash-ref program (+ ptr m) 0) 0)]))))
 
 (define (intcode-op f)
   (lambda (program ptr relative-pointer [modes (make-hash)])
     (define deref (intcode-parameter program ptr relative-pointer modes))
-    (vector-set! program (deref 3 #t)
+    (hash-set! program (deref 3 #t)
                  (f (deref 1)
                     (deref 2)))
     (values program (+ ptr 4) relative-pointer)))
@@ -65,7 +67,7 @@
 (define intcode-2 (intcode-op *))
 (define (intcode-3 program ptr relative-pointer [modes (make-hash)])
   (define deref (intcode-parameter program ptr relative-pointer modes))
-  (vector-set! program (deref 1 #t)
+  (hash-set! program (deref 1 #t)
                (string->number (string-trim (read-line))))
   (values program (+ ptr 2) relative-pointer))
 (define (intcode-4 program ptr relative-pointer [modes (make-hash)])
@@ -84,7 +86,7 @@
       (values program (+ ptr 3) relative-pointer)))
 (define (intcode-7 program ptr relative-pointer [modes (make-hash)])
   (define deref (intcode-parameter program ptr relative-pointer modes))
-  (vector-set! program (deref 3 #t)
+  (hash-set! program (deref 3 #t)
                (if (< (deref 1)
                       (deref 2))
                    1
@@ -92,7 +94,7 @@
   (values program (+ ptr 4) relative-pointer))
 (define (intcode-8 program ptr relative-pointer [modes (make-hash)])
   (define deref (intcode-parameter program ptr relative-pointer modes))
-  (vector-set! program (deref 3 #t)
+  (hash-set! program (deref 3 #t)
                (if (= (deref 1)
                       (deref 2))
                    1
@@ -103,14 +105,14 @@
 
 (define (intcode-machine ops [debug #f])
   (lambda (input)
-    (let loop ([program (vector-copy input)]
+    (let loop ([program (hash-copy input)]
                [pointer 0]
                [relative-pointer 0])
       (when debug
         (printf "Pointer: ~A~%" pointer)
         (printf "Relative pointer: ~A~%" relative-pointer)
         (printf "Program: ~A~%" program))
-      (define opcode (vector-ref program pointer))
+      (define opcode (hash-ref program pointer))
       (define op     (modulo opcode 100))
       (define modes  (for/hash ([i (in-naturals 1)]
                                 [c (in-list (reverse (string->list (number->string (floor (/ opcode 100))))))])
@@ -166,6 +168,12 @@
   (println "Takes no input, produces itself as output.")
   (define prog8 (string->intcode-program "109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99"))
   (machine prog8)
+  (println "Should produce a 16 digit number.")
+  (define prog9 (string->intcode-program "1102,34915192,34915192,7,4,7,99,0"))
+  (machine prog9)
+  (println "Should print 1125899906842624.")
+  (define prog10 (string->intcode-program "104,1125899906842624,99"))
+  (machine prog10)
   )
 
 (define day2-intcode-machine (intcode-machine (make-hash (list (cons 1 intcode-1)
@@ -173,17 +181,17 @@
                                                                (cons 99 intcode-99)))))
 
 (define (day2-1 input)
-  (vector-set! input 1 12)
-  (vector-set! input 2 2)
-  (vector-ref (day2-intcode-machine input) 0))
+  (hash-set! input 1 12)
+  (hash-set! input 2 2)
+  (hash-ref (day2-intcode-machine input) 0))
 
 (define (day2-2 input)
   (for/or ([noun (in-range 100)])
     (for/or ([verb (in-range 100)])
-      (let ([v (vector-copy input)])
-        (vector-set! v 1 noun)
-        (vector-set! v 2 verb)
-        (and (= (vector-ref (day2-intcode-machine v) 0)
+      (let ([v (hash-copy input)])
+        (hash-set! v 1 noun)
+        (hash-set! v 2 verb)
+        (and (= (hash-ref (day2-intcode-machine v) 0)
                 19690720)
              (+ (* noun 100) verb))))))
 
@@ -341,3 +349,20 @@
 (define (intcode-9 program ptr relative-pointer [modes (make-hash)])
   (define deref (intcode-parameter program ptr relative-pointer modes))
   (values program (+ ptr 2) (+ relative-pointer (deref 1))))
+
+(define (day9-1-input)
+  (file->intcode-program "../input/day9-input.txt"))
+
+(define (day9 input)
+  (define day9-intcode-machine (intcode-machine (make-hash (list (cons 1 intcode-1)
+                                                                 (cons 2 intcode-2)
+                                                                 (cons 3 intcode-3)
+                                                                 (cons 4 intcode-4)
+                                                                 (cons 5 intcode-5)
+                                                                 (cons 6 intcode-6)
+                                                                 (cons 7 intcode-7)
+                                                                 (cons 8 intcode-8)
+                                                                 (cons 9 intcode-9)
+                                                                 (cons 99 intcode-99)))
+                                                ))
+  (day9-intcode-machine input))
