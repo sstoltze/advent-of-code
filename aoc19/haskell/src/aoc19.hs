@@ -6,7 +6,8 @@ module Aoc where
 import Data.Text (pack)
 import Data.List (elemIndex)
 import Data.Attoparsec.Text
-import Data.Scientific (Scientific)
+import Control.Applicative
+--import Data.Scientific (Scientific)
 
 day1Input :: IO [Int]
 day1Input = do
@@ -65,25 +66,23 @@ parseMoons = do
   moons <- many' parseMoon
   endOfInput
   return moons
-
--- <x=-1, y=0, z=2>
-parseMoon :: Parser Moon
-parseMoon = do
-  char '<'
-  x <- parseCoordinate
-  string ", "
-  y <- parseCoordinate
-  string ", "
-  z <- parseCoordinate
-  char '>'
-  many' endOfLine
-  return $ Moon (Vec3 (x, y, z)) (Vec3 (0, 0, 0))
-
-parseCoordinate :: Parser Int
-parseCoordinate = do
-  letter
-  char '='
-  signed decimal
+  where
+    parseMoon :: Parser Moon
+    parseMoon = do
+      char '<'
+      x <- parseCoordinate
+      string ", "
+      y <- parseCoordinate
+      string ", "
+      z <- parseCoordinate
+      char '>'
+      many' endOfLine
+      return $ Moon (Vec3 (x, y, z)) (Vec3 (0, 0, 0))
+    parseCoordinate :: Parser Int
+    parseCoordinate = do
+      letter
+      char '='
+      signed decimal
 
 applyVelocity :: Moon -> Moon
 applyVelocity m = Moon { position = position m + velocity m
@@ -116,15 +115,6 @@ totalEnergy m = kineticEnergy m * potentialEnergy m
 systemEnergy :: [Moon] -> Int
 systemEnergy = sum . fmap totalEnergy
 
-xMoon :: Moon -> Moon
-xMoon (Moon (Vec3 (x,_,_)) (Vec3 (vx,_,_))) = Moon (Vec3 (x,0,0)) (Vec3 (vx,0,0))
-
-yMoon :: Moon -> Moon
-yMoon (Moon (Vec3 (_,y,_)) (Vec3 (_,vy,_))) = Moon (Vec3 (0,y,0)) (Vec3 (0,vy,0))
-
-zMoon :: Moon -> Moon
-zMoon (Moon (Vec3 (_,_,z)) (Vec3 (_,_,vz))) = Moon (Vec3 (0,0,z)) (Vec3 (0,0,vz))
-
 moonPeriod :: [Moon] -> Int
 moonPeriod ms = p
   where
@@ -137,6 +127,9 @@ period ms = foldr lcm 1 [lcmx ms, lcmy ms, lcmz ms]
     lcmx = moonPeriod . map xMoon
     lcmy = moonPeriod . map yMoon
     lcmz = moonPeriod . map zMoon
+    xMoon (Moon (Vec3 (x,_,_)) (Vec3 (vx,_,_))) = Moon (Vec3 (x,0,0)) (Vec3 (vx,0,0))
+    yMoon (Moon (Vec3 (_,y,_)) (Vec3 (_,vy,_))) = Moon (Vec3 (0,y,0)) (Vec3 (0,vy,0))
+    zMoon (Moon (Vec3 (_,_,z)) (Vec3 (_,_,vz))) = Moon (Vec3 (0,0,z)) (Vec3 (0,0,vz))
 
 day12 :: IO ()
 day12 = do
@@ -146,3 +139,54 @@ day12 = do
   putStrLn $ "Total energy after 1000 turns: " ++ show energy
   let p = period moons
   putStrLn $ "The system has period " ++ show p
+
+data OrbitName = COM
+               | OrbitName String
+               deriving (Show, Eq)
+
+data Orbit = Orbit { orbitName   :: OrbitName
+                   , orbitAround :: OrbitName
+                   } deriving (Show, Eq)
+
+parseOrbits :: Parser [Orbit]
+parseOrbits = do
+  orbits <- many' parseSingleOrbit
+  endOfInput
+  return $ (Orbit COM COM) : orbits
+  where
+    parseSingleOrbit = do
+      stationary <- many' (letter <|> digit)
+      char ')'
+      sattelite <- many' (letter <|> digit)
+      many' endOfLine
+      return Orbit { orbitName = (toOrbitName sattelite), orbitAround = (toOrbitName stationary) }
+    toOrbitName s = if s == "COM" then COM else OrbitName s
+
+allOrbits :: Orbit -> [Orbit] -> [Orbit]
+allOrbits o os = if orbitName o == COM
+                 then []
+                 else case findOrbitByName (orbitAround o) os of
+                        Just o' -> o' : allOrbits o' os
+                        Nothing -> []
+
+findOrbitByName :: OrbitName -> [Orbit] -> Maybe Orbit
+findOrbitByName _ [] = Nothing
+findOrbitByName n (o:os) = if orbitName o == n then Just o else findOrbitByName n os
+
+day6Input :: IO [Orbit]
+day6Input = do
+  file <- readFile "../input/day6-1.txt"
+  case parseOnly parseOrbits (pack file) of
+    Right orbits -> return orbits
+    Left _ -> return []
+
+day6TestInput :: IO [Orbit]
+day6TestInput = do
+  case parseOnly parseOrbits (pack "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L") of
+    Right orbits -> return orbits
+    Left _ -> return []
+
+day6 :: IO ()
+day6 = do
+  orbits <- day6Input
+  putStrLn $ "Total number of orbits is " ++ show (sum (map (length . flip allOrbits orbits) orbits))
