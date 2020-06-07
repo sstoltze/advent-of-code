@@ -47,13 +47,15 @@
     (values i p)))
 
 (define (intcode-parameter program ptr relative-pointer modes)
-  (lambda (m [immediate #f])
-    (if immediate
-        (hash-ref program (+ ptr m) 0)
-        (case (hash-ref modes m 0)
-          [(2)  (hash-ref program (+ relative-pointer ptr m) 0)]
-          [(1)  (hash-ref program (+ ptr m) 0)]
-          [else (hash-ref program (hash-ref program (+ ptr m) 0) 0)]))))
+  (lambda (m [write-mode #f])
+    (case (hash-ref modes m 0)
+      [(2)  (if write-mode
+                (+ (hash-ref program (+ ptr m) 0) relative-pointer)
+                (hash-ref program (+ (hash-ref program (+ ptr m) 0) relative-pointer) 0))]
+      [(1)  (hash-ref program (+ ptr m) 0)]
+      [else (if write-mode
+                (hash-ref program (+ ptr m) 0)
+                (hash-ref program (hash-ref program (+ ptr m) 0) 0))])))
 
 (define (intcode-op f)
   (lambda (program ptr relative-pointer [modes (make-hash)])
@@ -100,6 +102,9 @@
                    1
                    0))
   (values program (+ ptr 4) relative-pointer))
+(define (intcode-9 program ptr relative-pointer [modes (make-hash)])
+  (define deref (intcode-parameter program ptr relative-pointer modes))
+  (values program (+ ptr 2) (+ relative-pointer (deref 1))))
 (define (intcode-99 program ptr relative-pointer [modes (make-hash)])
   (values eof ptr relative-pointer))
 
@@ -127,7 +132,18 @@
           program
           (loop prog ptr rel)))))
 
-(define (intcode-test)
+(define intcode-interpreter (intcode-machine (make-hash (list (cons 1 intcode-1)
+                                                              (cons 2 intcode-2)
+                                                              (cons 3 intcode-3)
+                                                              (cons 4 intcode-4)
+                                                              (cons 5 intcode-5)
+                                                              (cons 6 intcode-6)
+                                                              (cons 7 intcode-7)
+                                                              (cons 8 intcode-8)
+                                                              (cons 9 intcode-9)
+                                                              (cons 99 intcode-99)))))
+
+(define (intcode-test [debug #f])
   (define machine (intcode-machine (make-hash (list (cons 1 intcode-1)
                                                     (cons 2 intcode-2)
                                                     (cons 3 intcode-3)
@@ -137,7 +153,8 @@
                                                     (cons 7 intcode-7)
                                                     (cons 8 intcode-8)
                                                     (cons 9 intcode-9)
-                                                    (cons 99 intcode-99)))))
+                                                    (cons 99 intcode-99)))
+                                   debug))
   (println "Checks whether input is equal to 8.")
   (define prog (string->intcode-program "3,9,8,9,10,9,4,9,99,-1,8"))
   (machine prog)
@@ -176,14 +193,10 @@
   (machine prog10)
   )
 
-(define day2-intcode-machine (intcode-machine (make-hash (list (cons 1 intcode-1)
-                                                               (cons 2 intcode-2)
-                                                               (cons 99 intcode-99)))))
-
 (define (day2-1 input)
   (hash-set! input 1 12)
   (hash-set! input 2 2)
-  (hash-ref (day2-intcode-machine input) 0))
+  (hash-ref (intcode-interpreter input) 0))
 
 (define (day2-2 input)
   (for/or ([noun (in-range 100)])
@@ -191,7 +204,7 @@
       (let ([v (hash-copy input)])
         (hash-set! v 1 noun)
         (hash-set! v 2 verb)
-        (and (= (hash-ref (day2-intcode-machine v) 0)
+        (and (= (hash-ref (intcode-interpreter v) 0)
                 19690720)
              (+ (* noun 100) verb))))))
 
@@ -271,25 +284,14 @@
                                          (wire-steps w2 p)))
                           (set->list intersections)))))
 
-(define day5-intcode-machine (intcode-machine (make-hash (list (cons 1 intcode-1)
-                                                               (cons 2 intcode-2)
-                                                               (cons 3 intcode-3)
-                                                               (cons 4 intcode-4)
-                                                               (cons 5 intcode-5)
-                                                               (cons 6 intcode-6)
-                                                               (cons 7 intcode-7)
-                                                               (cons 8 intcode-8)
-                                                               (cons 99 intcode-99)))
-                                              ))
-
 (define (day5-1-input)
   (file->intcode-program "../input/day5-1.txt"))
 
 (define (day5 input)
   (println "5-1: Enter 1 when prompted.")
-  (day5-intcode-machine input)
+  (intcode-interpreter input)
   (println "5-2: Enter 5 when prompted.")
-  (day5-intcode-machine input))
+  (intcode-interpreter input))
 
 (define (day4-1-input)
   (map string->number (string-split (string-trim (file->string "../input/day4-1.txt")) "-")))
@@ -346,23 +348,92 @@
   (printf "Number of passwords: ~A~%" (length day4-1-output))
   (printf "Number of updated passwords: ~A~%" (length (filter two-equal-adjacent? day4-1-output))))
 
-(define (intcode-9 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
-  (values program (+ ptr 2) (+ relative-pointer (deref 1))))
-
 (define (day9-1-input)
   (file->intcode-program "../input/day9-input.txt"))
 
 (define (day9 input)
-  (define day9-intcode-machine (intcode-machine (make-hash (list (cons 1 intcode-1)
-                                                                 (cons 2 intcode-2)
-                                                                 (cons 3 intcode-3)
-                                                                 (cons 4 intcode-4)
-                                                                 (cons 5 intcode-5)
-                                                                 (cons 6 intcode-6)
-                                                                 (cons 7 intcode-7)
-                                                                 (cons 8 intcode-8)
-                                                                 (cons 9 intcode-9)
-                                                                 (cons 99 intcode-99)))
-                                                ))
-  (day9-intcode-machine input))
+  (println "Enter 1 to get first answer.")
+  (intcode-interpreter input)
+  (println "Enter 2 to get second answer.")
+  (intcode-interpreter input)
+  #t)
+
+(define (string-ref-default l i default)
+  (if (<= 0 i (- (string-length l) 1))
+      (string-ref l i)
+      default))
+
+(define (map-ref m i j)
+  (define lines (string-split m "\n"))
+  (if (<= 0 j (- (length lines) 1))
+      (string-ref-default (list-ref lines j) i #\.)
+      #\.))
+
+(define (intersection-point? m x y)
+  (and (char=? (map-ref m x y) #\#)
+       (char=? (map-ref m (+ x 1) y) #\#)
+       (char=? (map-ref m (- x 1) y) #\#)
+       (char=? (map-ref m x (+ y 1)) #\#)
+       (char=? (map-ref m x (- y 1)) #\#)))
+
+(define (map->intersection-points m)
+  (define lines (string-split m "\n"))
+  (flatten
+   (for/list ([i (in-range (string-length (first lines)))])
+     (for/list ([j (in-range (length lines))]
+                #:when (intersection-point? m i j))
+       (point i j)))))
+
+(define (alignment-parameter p)
+  (* (point-x p) (point-y p)))
+
+(define (calibration-parameter points)
+  (apply + (map alignment-parameter points)))
+
+(define (day17-1-input)
+  (file->intcode-program "../input/day17-1-input.txt"))
+
+(define (list->ascii-code l)
+  (define (symbol->ascii-character s)
+    (string-join
+     (map (compose number->string char->integer)
+          (string->list s))
+     ","))
+  (define (list->ascii-line line)
+    (string-append
+     (string-join (map symbol->ascii-character line)
+                  ",44,")
+     ",10"))
+  (string-join (map list->ascii-line l)
+               ","))
+
+(define (string->map s)
+  (list->string
+   (map (compose integer->char string->number)
+        (string-split s "\n"))))
+
+(define (day17 input)
+  (define output (let ([s (open-output-string)])
+                   (parameterize ([current-output-port s])
+                     (intcode-interpreter input)
+                     (get-output-string s))))
+  (define camera-view (string->map output))
+  (display camera-view)
+  (define intersection-points (map->intersection-points camera-view))
+  (printf "The calibration parameter is ~S.~%" (calibration-parameter intersection-points))
+  (define alt-program (hash-set input 0 2))
+  (define input-string (list->ascii-code (list
+                                          (list "A")
+                                          (list "L" "10" "R" "8" "L" "6" "R" "6" "L" "8" "L" "8")
+                                          (list "L")
+                                          (list "R")
+                                          (list "n")))
+    )
+  (let ([s (open-output-string)])
+    (with-handlers ([(const #t) (lambda (e)
+                                  (display (string->map (get-output-string s))))])
+      (parameterize ([current-input-port (open-input-string input-string)]
+                     [current-output-port s])
+        (intcode-interpreter alt-program)
+        (display (string->map (get-output-string s))))))
+  )
