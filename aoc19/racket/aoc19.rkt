@@ -46,20 +46,23 @@
                              (string-split s #px"[\\s,]+")))])
     (values i p)))
 
-(define (intcode-parameter program ptr relative-pointer modes)
+(define (intcode-parameter program ptr relative-pointer modes [debug #f])
   (lambda (m [write-mode #f])
-    (case (hash-ref modes m 0)
-      [(2)  (if write-mode
-                (+ (hash-ref program (+ ptr m) 0) relative-pointer)
-                (hash-ref program (+ (hash-ref program (+ ptr m) 0) relative-pointer) 0))]
-      [(1)  (hash-ref program (+ ptr m) 0)]
-      [else (if write-mode
-                (hash-ref program (+ ptr m) 0)
-                (hash-ref program (hash-ref program (+ ptr m) 0) 0))])))
+    (define output (case (hash-ref modes m 0)
+                     [(2)  (if write-mode
+                               (+ (hash-ref program (+ ptr m) 0) relative-pointer)
+                               (hash-ref program (+ (hash-ref program (+ ptr m) 0) relative-pointer) 0))]
+                     [(1)  (hash-ref program (+ ptr m) 0)]
+                     [else (if write-mode
+                               (hash-ref program (+ ptr m) 0)
+                               (hash-ref program (hash-ref program (+ ptr m) 0) 0))]))
+    (when debug
+      (printf "Deref ~S~A: ~S~%" m (if write-mode "w" "") output))
+    output))
 
 (define (intcode-op f)
-  (lambda (program ptr relative-pointer [modes (make-hash)])
-    (define deref (intcode-parameter program ptr relative-pointer modes))
+  (lambda (program ptr relative-pointer [modes (make-hash)] [debug #f])
+    (define deref (intcode-parameter program ptr relative-pointer modes debug))
     (hash-set! program (deref 3 #t)
                  (f (deref 1)
                     (deref 2)))
@@ -67,49 +70,52 @@
 
 (define intcode-1 (intcode-op +))
 (define intcode-2 (intcode-op *))
-(define (intcode-3 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-3 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
+  (define input (read-line))
+  (when debug
+    (printf "Read input: ~S~%" input))
   (hash-set! program (deref 1 #t)
-               (string->number (string-trim (read-line))))
+             (string->number (string-trim input)))
   (values program (+ ptr 2) relative-pointer))
-(define (intcode-4 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-4 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (println (deref 1))
   (values program (+ ptr 2) relative-pointer))
-(define (intcode-5 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-5 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (if (not (zero? (deref 1)))
       (values program (deref 2) relative-pointer)
       (values program (+ ptr 3) relative-pointer)))
-(define (intcode-6 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-6 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (if (zero? (deref 1))
       (values program (deref 2) relative-pointer)
       (values program (+ ptr 3) relative-pointer)))
-(define (intcode-7 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-7 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (hash-set! program (deref 3 #t)
                (if (< (deref 1)
                       (deref 2))
                    1
                    0))
   (values program (+ ptr 4) relative-pointer))
-(define (intcode-8 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-8 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (hash-set! program (deref 3 #t)
                (if (= (deref 1)
                       (deref 2))
                    1
                    0))
   (values program (+ ptr 4) relative-pointer))
-(define (intcode-9 program ptr relative-pointer [modes (make-hash)])
-  (define deref (intcode-parameter program ptr relative-pointer modes))
+(define (intcode-9 program ptr relative-pointer [modes (make-hash)] [debug #f])
+  (define deref (intcode-parameter program ptr relative-pointer modes debug))
   (values program (+ ptr 2) (+ relative-pointer (deref 1))))
-(define (intcode-99 program ptr relative-pointer [modes (make-hash)])
+(define (intcode-99 program ptr relative-pointer [modes (make-hash)] [debug #f])
   (values eof ptr relative-pointer))
 
-(define (intcode-machine ops [debug #f])
-  (lambda (input)
+(define (intcode-machine ops [debug-all #f])
+  (lambda (input [debug debug-all])
     (let loop ([program (hash-copy input)]
                [pointer 0]
                [relative-pointer 0])
@@ -126,8 +132,9 @@
         (printf "Opcode: ~A~%Op: ~A~%Modes: ~A~%" opcode op modes))
       (define proc (hash-ref ops op))
       (when debug
-        (printf "Proc: ~A~%~%" proc))
-      (define-values (prog ptr rel) (proc program pointer relative-pointer modes))
+        (printf "Proc: ~A~%" proc))
+      (define-values (prog ptr rel) (proc program pointer relative-pointer modes debug))
+      (printf "~%")
       (if (eof-object? prog)
           program
           (loop prog ptr rel)))))
@@ -141,7 +148,8 @@
                                                               (cons 7 intcode-7)
                                                               (cons 8 intcode-8)
                                                               (cons 9 intcode-9)
-                                                              (cons 99 intcode-99)))))
+                                                              (cons 99 intcode-99)))
+                                             ))
 
 (define (intcode-test [debug #f])
   (define machine (intcode-machine (make-hash (list (cons 1 intcode-1)
@@ -437,3 +445,24 @@
         (intcode-interpreter alt-program)
         (display (string->map (get-output-string s))))))
   )
+
+(define (day7-1-input)
+  (file->intcode-program "../input/day7-1-input.txt"))
+
+(define (run-amplifiers amplifier phases)
+  (let loop ([input 0]
+             [phases phases])
+    (cond
+      [(empty? phases) input]
+      [else            (define input-string (format "~A\n~A\n" (first phases) input))
+                       (define output-string (open-output-string))
+                       (define output (parameterize ([current-input-port (open-input-string input-string)]
+                                                     [current-output-port output-string])
+                                        (intcode-interpreter amplifier)
+                                        (string->number (string-trim (get-output-string output-string)))))
+                       (loop output (rest phases))])))
+
+(define (day7 input)
+  (for/fold ([result 0])
+            ([phase (permutations '(0 1 2 3 4))])
+    (max result (run-amplifiers input phase))))
