@@ -4,8 +4,10 @@ module Aoc where
 
 --import System.IO
 import Data.Text (pack)
-import Data.List (elemIndex)
+import Data.Char (digitToInt)
+import Data.List (elemIndex, minimumBy)
 import Data.Attoparsec.Text
+--import Data.Attoparsec.Combinator
 import Control.Applicative
 --import Data.Scientific (Scientific)
 
@@ -152,14 +154,14 @@ parseOrbits :: Parser [Orbit]
 parseOrbits = do
   orbits <- many' parseSingleOrbit
   endOfInput
-  return $ (Orbit COM COM) : orbits
+  return $ Orbit COM COM : orbits
   where
     parseSingleOrbit = do
       stationary <- many' (letter <|> digit)
       char ')'
       sattelite <- many' (letter <|> digit)
       many' endOfLine
-      return Orbit { orbitName = (toOrbitName sattelite), orbitAround = (toOrbitName stationary) }
+      return Orbit { orbitName = toOrbitName sattelite, orbitAround = toOrbitName stationary }
     toOrbitName s = if s == "COM" then COM else OrbitName s
 
 allOrbits :: Orbit -> [Orbit] -> [Orbit]
@@ -181,12 +183,84 @@ day6Input = do
     Left _ -> return []
 
 day6TestInput :: IO [Orbit]
-day6TestInput = do
-  case parseOnly parseOrbits (pack "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L") of
-    Right orbits -> return orbits
-    Left _ -> return []
+day6TestInput = case parseOnly parseOrbits (pack "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L") of
+                  Right orbits -> return orbits
+                  Left _ -> return []
 
 day6 :: IO ()
 day6 = do
   orbits <- day6Input
   putStrLn $ "Total number of orbits is " ++ show (sum (map (length . flip allOrbits orbits) orbits))
+
+data Layer = Layer { layerWidth :: Int
+                   , layerHeight :: Int
+                   , layerPixels :: [Int]
+                   } deriving (Show)
+
+data Image = Image { imageWidth :: Int
+                   , imageHeight :: Int
+                   , imageLayers :: [Layer]
+                   } deriving (Show)
+
+errorImage :: Image
+errorImage = Image { imageWidth = 0
+                   , imageHeight = 0
+                   , imageLayers = []
+                   }
+
+listRows :: Int -> Int -> [a] -> [[a]]
+listRows _ 0 _ = []
+listRows width height pixels = row : listRows width (height-1) rest
+  where
+    (row, rest) = splitAt width pixels
+
+parseLayer :: Int -> Int -> Parser Layer
+parseLayer width height = pixelsToLayer <$> (fmap digitToInt <$> count (width * height) digit)
+  where
+    pixelsToLayer p = Layer { layerWidth = width
+                            , layerHeight = height
+                            , layerPixels = p
+                            }
+
+parseImage :: Int -> Int -> Parser Image
+parseImage width height = layersToImage <$> many' (parseLayer width height)
+  where
+    layersToImage ls = Image { imageWidth = width
+                             , imageHeight = height
+                             , imageLayers = ls
+                             }
+
+drawImage :: Image -> String
+drawImage (Image { imageWidth = width, imageHeight = height, imageLayers = layers}) = join '\n' $ listRows width height $ fmap drawImageCharacter [0..imageSize]
+  where
+    imageSize = height * width - 1
+    drawImageCharacter = layerCharacter layers
+    layerCharacter [] _ = 'O'
+    layerCharacter (l:ls) i = case layerPixels l !! i of
+                                  0 -> ' '
+                                  1 -> 'X'
+                                  2 -> layerCharacter ls i
+                                  _ -> error ":("
+    join _ [] = []
+    join c (x:xs) = x ++ c : join c xs
+
+
+day8TestInput :: Image
+day8TestInput = case parseOnly (parseImage 3 2) "123456789012" of
+                  Right image -> image
+                  Left _ -> errorImage
+
+day8Input :: IO Image
+day8Input = do
+  file <- readFile "../input/day8-1.txt"
+  return $ either (const errorImage) id (parseOnly (parseImage 25 6) (pack file))
+
+day8 :: IO ()
+day8 = do
+  input <- day8Input
+  let minLayer = minimumBy compareLayerZeroes (imageLayers input)
+  print $ layerCount 1 minLayer * layerCount 2 minLayer
+  putStr $ drawImage input
+  where
+    compareLayerZeroes a b = compare (layerCount 0 a) (layerCount 0 b)
+    layerCount n = length . filter (== n) . layerPixels
