@@ -4,9 +4,9 @@ module Aoc where
 
 --import System.IO
 import Data.Text (pack)
-import Data.Char (digitToInt)
+import Data.Char (digitToInt, intToDigit)
 import Data.List (elemIndex, minimumBy)
-import Data.Attoparsec.Text
+import Data.Attoparsec.Text (Parser, parseOnly, many', count, digit, char, letter, endOfLine, endOfInput, string, signed, decimal)
 --import Data.Attoparsec.Combinator
 import Control.Applicative
 --import Data.Scientific (Scientific)
@@ -264,3 +264,36 @@ day8 = do
   where
     compareLayerZeroes a b = compare (layerCount 0 a) (layerCount 0 b)
     layerCount n = length . filter (== n) . layerPixels
+
+parseSignal :: String -> [Int]
+parseSignal = map digitToInt . filter (/= '\n')
+
+showSignal :: [Int] -> String
+showSignal = map intToDigit
+
+fft :: [Int] -> [Int]
+fft signal = take (length signal) $ map (`fftPass` signal) [1..]
+  where
+    fftPass :: Int -> [Int] -> Int
+    fftPass k pat = abs (sum $ zipWith (*) pat (passPattern k)) `mod` 10
+    baseFftPattern :: [Int]
+    baseFftPattern = [0, 1, 0, -1]
+    passPattern :: Int -> [Int]
+    passPattern k = drop 1 $ cycle $ concatMap (replicate k) baseFftPattern
+
+fftSignals :: [Int] -> [[Int]]
+fftSignals signal = let next = fft signal in signal : fftSignals next
+
+day16Input :: IO [Int]
+day16Input = parseSignal <$> readFile "../input/day16-1.txt"
+
+day16 :: IO ()
+day16 = do
+  signal <- day16Input
+  let signals = fftSignals signal
+  let hundreth = signals !! 100
+  putStrLn $ take 8 $ showSignal hundreth
+  putStrLn $ take 8 $ showSignal (realSignal signal)
+
+realSignal :: [Int] -> [Int]
+realSignal signal = drop (read $ showSignal $ take 7 signal) $ fftSignals (concat $ replicate 10000 signal) !! 100
