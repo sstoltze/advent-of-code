@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor #-}
 module Aoc where
 
---import System.IO
-import Data.Text (pack)
-import Data.Char (digitToInt, intToDigit)
-import Data.List (elemIndex, minimumBy)
-import Data.Attoparsec.Text (Parser, parseOnly, many', count, digit, char, letter, endOfLine, endOfInput, string, signed, decimal)
---import Data.Attoparsec.Combinator
-import Control.Applicative
---import Data.Scientific (Scientific)
+import           Data.Maybe (fromJust)
+import qualified Data.Map.Strict as Map
+import           Data.Text (pack)
+import           Data.Char (digitToInt, intToDigit)
+import           Data.List (elemIndex, minimumBy, find)
+import qualified Data.Attoparsec.Text as P
+import           Control.Applicative
+
 
 day1Input :: IO [Int]
 day1Input = do
@@ -54,37 +54,37 @@ data Moon = Moon {position :: Position,
 day12Input :: IO [Moon]
 day12Input = do
   file <- readFile "../input/day12-1.txt"
-  case parseOnly parseMoons (pack file) of
+  case P.parseOnly parseMoons (pack file) of
     Right moons -> return moons
     Left _ -> return []
 
 day12TestInput :: [Moon]
-day12TestInput = case parseOnly parseMoons "<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>" of
+day12TestInput = case P.parseOnly parseMoons "<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>" of
     Right moons -> moons
     Left _ -> []
 
-parseMoons :: Parser [Moon]
+parseMoons :: P.Parser [Moon]
 parseMoons = do
-  moons <- many' parseMoon
-  endOfInput
+  moons <- P.many' parseMoon
+  P.endOfInput
   return moons
   where
-    parseMoon :: Parser Moon
+    parseMoon :: P.Parser Moon
     parseMoon = do
-      char '<'
+      P.char '<'
       x <- parseCoordinate
-      string ", "
+      P.string ", "
       y <- parseCoordinate
-      string ", "
+      P.string ", "
       z <- parseCoordinate
-      char '>'
-      many' endOfLine
+      P.char '>'
+      P.many' P.endOfLine
       return $ Moon (Vec3 (x, y, z)) (Vec3 (0, 0, 0))
-    parseCoordinate :: Parser Int
+    parseCoordinate :: P.Parser Int
     parseCoordinate = do
-      letter
-      char '='
-      signed decimal
+      P.letter
+      P.char '='
+      P.signed P.decimal
 
 applyVelocity :: Moon -> Moon
 applyVelocity m = Moon { position = position m + velocity m
@@ -150,17 +150,17 @@ data Orbit = Orbit { orbitName   :: OrbitName
                    , orbitAround :: OrbitName
                    } deriving (Show, Eq)
 
-parseOrbits :: Parser [Orbit]
+parseOrbits :: P.Parser [Orbit]
 parseOrbits = do
-  orbits <- many' parseSingleOrbit
-  endOfInput
+  orbits <- P.many' parseSingleOrbit
+  P.endOfInput
   return $ Orbit COM COM : orbits
   where
     parseSingleOrbit = do
-      stationary <- many' (letter <|> digit)
-      char ')'
-      sattelite <- many' (letter <|> digit)
-      many' endOfLine
+      stationary <- P.many' (P.letter <|> P.digit)
+      P.char ')'
+      sattelite <- P.many' (P.letter <|> P.digit)
+      P.many' P.endOfLine
       return Orbit { orbitName = toOrbitName sattelite, orbitAround = toOrbitName stationary }
     toOrbitName s = if s == "COM" then COM else OrbitName s
 
@@ -178,12 +178,12 @@ findOrbitByName n (o:os) = if orbitName o == n then Just o else findOrbitByName 
 day6Input :: IO [Orbit]
 day6Input = do
   file <- readFile "../input/day6-1.txt"
-  case parseOnly parseOrbits (pack file) of
+  case P.parseOnly parseOrbits (pack file) of
     Right orbits -> return orbits
     Left _ -> return []
 
 day6TestInput :: IO [Orbit]
-day6TestInput = case parseOnly parseOrbits (pack "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L") of
+day6TestInput = case P.parseOnly parseOrbits (pack "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L") of
                   Right orbits -> return orbits
                   Left _ -> return []
 
@@ -214,16 +214,16 @@ listRows width height pixels = row : listRows width (height-1) rest
   where
     (row, rest) = splitAt width pixels
 
-parseLayer :: Int -> Int -> Parser Layer
-parseLayer width height = pixelsToLayer <$> (fmap digitToInt <$> count (width * height) digit)
+parseLayer :: Int -> Int -> P.Parser Layer
+parseLayer width height = pixelsToLayer <$> (fmap digitToInt <$> P.count (width * height) P.digit)
   where
     pixelsToLayer p = Layer { layerWidth = width
                             , layerHeight = height
                             , layerPixels = p
                             }
 
-parseImage :: Int -> Int -> Parser Image
-parseImage width height = layersToImage <$> many' (parseLayer width height)
+parseImage :: Int -> Int -> P.Parser Image
+parseImage width height = layersToImage <$> P.many' (parseLayer width height)
   where
     layersToImage ls = Image { imageWidth = width
                              , imageHeight = height
@@ -246,14 +246,14 @@ drawImage (Image { imageWidth = width, imageHeight = height, imageLayers = layer
 
 
 day8TestInput :: Image
-day8TestInput = case parseOnly (parseImage 3 2) "123456789012" of
+day8TestInput = case P.parseOnly (parseImage 3 2) "123456789012" of
                   Right image -> image
                   Left _ -> errorImage
 
 day8Input :: IO Image
 day8Input = do
   file <- readFile "../input/day8-1.txt"
-  return $ either (const errorImage) id (parseOnly (parseImage 25 6) (pack file))
+  return $ either (const errorImage) id (P.parseOnly (parseImage 25 6) (pack file))
 
 day8 :: IO ()
 day8 = do
@@ -297,3 +297,117 @@ day16 = do
 
 realSignal :: [Int] -> [Int]
 realSignal signal = drop (read $ showSignal $ take 7 signal) $ fftSignals (concat $ replicate 10000 signal) !! 100
+
+type Reagent = (Int, String)
+type Reactions = Map.Map Reagent [Reagent]
+
+parseReactions :: String -> Reactions
+parseReactions s = case P.parseOnly parseReactions' (pack s) of
+  Right reactions -> reactions
+  Left _          -> Map.empty
+  where
+    parseReactions' :: P.Parser Reactions
+    parseReactions' = do
+      reactions <- P.many' parseSingleReaction
+      P.endOfInput
+      return $ foldr Map.union Map.empty reactions
+    parseSingleReaction :: P.Parser Reactions
+    parseSingleReaction = do
+      reagents <- P.many' parseReagent
+      P.string " => "
+      result <- parseReagent
+      P.many' P.endOfLine
+      return $ Map.singleton result reagents
+    parseReagent :: P.Parser Reagent
+    parseReagent = do
+      P.many' (P.char ' ' <|> P.char ',')
+      number <- P.decimal
+      P.char ' '
+      reagent <- P.many' P.letter
+      return (number, reagent)
+
+lookupReagent :: Reactions -> String -> Maybe Reagent
+lookupReagent reactions element = find ((== element) . reagentName) $ Map.keys reactions
+
+reagentName :: Reagent -> String
+reagentName = snd
+
+neededElements :: Reactions -> Reagent -> [Reagent]
+neededElements reactions (k, element) =
+  if k <= 0
+  then [(k, element)]
+  else
+    case lookupReagent reactions element of
+      Just (n, _) -> foldr addReagentToList [] reagents
+        where q' = k `div` n
+              q = if q'*n < k then q' + 1 else q'
+              reagents' = fromJust $ Map.lookup (n, element) reactions
+              reagents = (k - q*n, element) : fmap (\(a,e) -> (a*q, e)) reagents'
+      Nothing -> [(k, element)]
+
+addReagentToList :: Reagent -> [Reagent] -> [Reagent]
+addReagentToList (0, _)  [] = []
+addReagentToList reagent [] = [reagent]
+addReagentToList reagent@(k, element) (r@(n, rName):rs)
+  | element == rName = if k+n == 0 then rs else (k+n, element) : rs
+  | otherwise        = r : addReagentToList reagent rs
+
+runBackwardsReactions :: Reactions -> [Reagent] -> [Reagent]
+runBackwardsReactions reactions wantedList = foldr addReagentToList [] $ concatMap (neededElements reactions) wantedList
+
+runBackwardsReactionsToCompletion :: Reactions -> [Reagent] -> [Reagent]
+runBackwardsReactionsToCompletion reactions reagentList = fst $ head $ dropWhile (uncurry (/=)) $ zip produced (drop 2 produced)
+  where produced = iterate (runBackwardsReactions reactions) reagentList
+
+testReactions :: Reactions
+testReactions = parseReactions $ unlines [ "10 ORE => 10 A"
+                                         , "1 ORE => 1 B"
+                                         , "7 A, 1 B => 1 C"
+                                         , "7 A, 1 C => 1 D"
+                                         , "7 A, 1 D => 1 E"
+                                         , "7 A, 1 E => 1 FUEL"]
+
+testReactions2 :: Reactions
+testReactions2 = parseReactions $ unlines [ "2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG"
+                                          , "17 NVRVD, 3 JNWZP => 8 VPVL"
+                                          , "53 STKFG, 6 MNCFX, 46 VJHF, 81 HVMC, 68 CXFTF, 25 GNMV => 1 FUEL"
+                                          , "22 VJHF, 37 MNCFX => 5 FWMGM"
+                                          , "139 ORE => 4 NVRVD"
+                                          , "144 ORE => 7 JNWZP"
+                                          , "5 MNCFX, 7 RFSQX, 2 FWMGM, 2 VPVL, 19 CXFTF => 3 HVMC"
+                                          , "5 VJHF, 7 MNCFX, 9 VPVL, 37 CXFTF => 6 GNMV"
+                                          , "145 ORE => 6 MNCFX"
+                                          , "1 NVRVD => 8 CXFTF"
+                                          , "1 VJHF, 6 MNCFX => 4 RFSQX"
+                                          , "176 ORE => 6 VJHF"]
+
+day14Input :: IO Reactions
+day14Input = parseReactions <$> readFile "../input/day14-1.txt"
+
+oreProduced :: [Reagent] -> Int
+oreProduced = maybe 0 fst . find ((== "ORE") . reagentName)
+
+maxFuelForOre :: Reactions -> Int -> Int -> Int -> Int
+maxFuelForOre reactions maxOre start end = maxFuelForOre' reactions maxOre (nextGuess start end) 0 start end
+  where
+    nextGuess a b = (b + a) `div` 2
+    maxFuelForOre' rs n k best min max
+      | min == max || max - min == 1  = if produced min <= n
+                                        then min
+                                        else best
+      | produced k <= n = if produced k >= best
+                          then maxFuelForOre' rs n (nextGuess min max) k    k   max
+                          else maxFuelForOre' rs n (nextGuess min max) best min k
+      | otherwise = maxFuelForOre' rs n (nextGuess min max) best min k
+    produced fuel = oreProduced $ runBackwardsReactionsToCompletion reactions [(fuel, "FUEL")]
+
+
+day14 :: IO ()
+day14 = do
+  reactions <- day14Input
+  let completed = runBackwardsReactionsToCompletion reactions [(1, "FUEL")]
+  let oreNeeded = oreProduced completed
+  print oreNeeded
+  let ore = 1000000000000
+  let canBeProduced = maxFuelForOre reactions ore 1 ore
+  print canBeProduced
