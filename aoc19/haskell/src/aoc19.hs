@@ -313,14 +313,13 @@ parseReactions s = case P.parseOnly parseReactions' (pack s) of
       return $ foldr Map.union Map.empty reactions
     parseSingleReaction :: P.Parser Reactions
     parseSingleReaction = do
-      reagents <- P.many' parseReagent
+      reagents <- P.sepBy parseReagent (P.string ", ")
       P.string " => "
       result <- parseReagent
       P.many' P.endOfLine
       return $ Map.singleton result reagents
     parseReagent :: P.Parser Reagent
     parseReagent = do
-      P.many' (P.char ' ' <|> P.char ',')
       number <- P.decimal
       P.char ' '
       reagent <- P.many' P.letter
@@ -365,7 +364,8 @@ testReactions = parseReactions $ unlines [ "10 ORE => 10 A"
                                          , "7 A, 1 B => 1 C"
                                          , "7 A, 1 C => 1 D"
                                          , "7 A, 1 D => 1 E"
-                                         , "7 A, 1 E => 1 FUEL"]
+                                         , "7 A, 1 E => 1 FUEL"
+                                         ]
 
 testReactions2 :: Reactions
 testReactions2 = parseReactions $ unlines [ "2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG"
@@ -387,19 +387,22 @@ day14Input = parseReactions <$> readFile "../input/day14-1.txt"
 oreProduced :: [Reagent] -> Int
 oreProduced = maybe 0 fst . find ((== "ORE") . reagentName)
 
-maxFuelForOre :: Reactions -> Int -> Int -> Int -> Int
-maxFuelForOre reactions maxOre start end = maxFuelForOre' reactions maxOre (nextGuess start end) 0 start end
+maxFuelForOre :: Reactions -> Int -> Int
+maxFuelForOre rs ore = maxFuelForOre' rs ore (nextGuess 1 ore) 0 1 ore
   where
+    nextGuess :: Int -> Int -> Int
     nextGuess a b = (b + a) `div` 2
-    maxFuelForOre' rs n k best min max
-      | min == max || max - min == 1  = if produced min <= n
-                                        then min
-                                        else best
-      | produced k <= n = if produced k >= best
-                          then maxFuelForOre' rs n (nextGuess min max) k    k   max
-                          else maxFuelForOre' rs n (nextGuess min max) best min k
-      | otherwise = maxFuelForOre' rs n (nextGuess min max) best min k
-    produced fuel = oreProduced $ runBackwardsReactionsToCompletion reactions [(fuel, "FUEL")]
+    maxFuelForOre' :: Reactions -> Int -> Int -> Int -> Int -> Int -> Int
+    maxFuelForOre' reactions maxOre currentGuess best start end
+      | start == end || end - start == 1  = if requiredOre start <= maxOre
+                                            then start
+                                            else best
+      | requiredOre currentGuess <= maxOre = if requiredOre currentGuess >= best
+                                             then maxFuelForOre' reactions maxOre (nextGuess start end) currentGuess currentGuess end
+                                             else maxFuelForOre' reactions maxOre (nextGuess start end) best start currentGuess
+      | otherwise = maxFuelForOre' reactions maxOre (nextGuess start end) best start currentGuess
+    requiredOre :: Int -> Int
+    requiredOre producedFuel = oreProduced $ runBackwardsReactionsToCompletion rs [(producedFuel, "FUEL")]
 
 
 day14 :: IO ()
@@ -409,5 +412,5 @@ day14 = do
   let oreNeeded = oreProduced completed
   print oreNeeded
   let ore = 1000000000000
-  let canBeProduced = maxFuelForOre reactions ore 1 ore
+  let canBeProduced = maxFuelForOre reactions ore
   print canBeProduced
