@@ -58,7 +58,7 @@
                            2)
                        (setq first-visit (cons current-north current-east)))))))
     (values (+ (abs north-pos) (abs east-pos))
-            first-visit)))
+            (+ (abs (car first-visit)) (abs (cdr first-visit))))))
 
 (defun day-two ()
   "Old grid:
