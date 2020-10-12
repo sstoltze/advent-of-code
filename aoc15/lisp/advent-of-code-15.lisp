@@ -6,6 +6,12 @@
                 ironclad
                 cl-ppcre))
 
+(defun set-hash-table (hash alist)
+  (do ((key-vals alist       (rest key-vals))
+       (elem     (car alist) (car key-vals)))
+      ((null key-vals) hash)
+    (setf (gethash hash (car elem)) (cdr elem))))
+
 (defun day-one-simple (directions)
   "Directions is a string of parentheses, representing up, '(', or down, ')'. Count the total."
   (apply #'+ (map 'list
@@ -344,9 +350,8 @@
                          (cl-ppcre:register-groups-bind (ingredient (#'parse-integer capacity durability flavor texture calories))
                                                         (match line)
                                                         (setf (gethash result ingredient)
-                                                              (make-hash-table :test #'equalp
-                                                                               :initial-contents
-                                                                               (list (cons "name" ingredient)
+                                                              (set-hash-tabl (make-hash-table :test #'equalp)
+                                                                             (list (cons "name" ingredient)
                                                                                      (cons "capacity" capacity)
                                                                                      (cons "durability" durability)
                                                                                      (cons "flavor" flavor)
@@ -364,48 +369,45 @@
                      (match (cl-ppcre:create-scanner "Sue (\\d+): ([a-z]+): (\\d+), ([a-z]+): (\\d+), ([a-z]+): (\\d+)")))
                     ((null line) sues)
                   (push (cl-ppcre:register-groups-bind (number first-thing first-number second-thing second-number third-thing third-number)
-                                                       (match line)
-                                                       (make-hash-table :test #'equalp
-                                                                        :initial-contents
-                                                                        (list (cons "number"     (parse-integer number))
-                                                                              (cons first-thing  (parse-integer first-number))
-                                                                              (cons second-thing (parse-integer second-number))
-                                                                              (cons third-thing  (parse-integer third-number)))))
+                            (match line)
+                          (set-hash-table (make-hash-table :test #'equalp)
+                                          (list (cons "number"     (parse-integer number))
+                                                (cons first-thing  (parse-integer first-number))
+                                                (cons second-thing (parse-integer second-number))
+                                                (cons third-thing  (parse-integer third-number)))))
                         sues)))
-          (gift-sue (make-hash-table :test #'equalp
-                                     :initial-contents
-                                     (list (cons "children" 3)
-                                           (cons "cats" 7)
-                                           (cons "samoyeds" 2)
-                                           (cons "pomeranians" 3)
-                                           (cons "akitas" 0)
-                                           (cons "vizslas" 0)
-                                           (cons "goldfish" 5)
-                                           (cons "trees" 3)
-                                           (cons "cars" 2)
-                                           (cons "perfumes" 1))))
-          (tests (make-hash-table :test #'equalp
-                                  :initial-contents
-                                  (list (cons "children" #'equalp)
-                                        (cons "cats" #'>) ; #'equalp
-                                        (cons "samoyeds" #'equalp)
-                                        (cons "pomeranians" #'<) ; #'equalp
-                                        (cons "akitas" #'equalp)
-                                        (cons "vizslas" #'equalp)
-                                        (cons "goldfish" #'<) ; #'equalp
-                                        (cons "trees" #'>) ; #'equalp
-                                        (cons "cars" #'equalp)
-                                        (cons "perfumes" #'equalp)))))
+          (gift-sue (set-hash-table (make-hash-table :test #'equalp)
+                                    (list (cons "children" 3)
+                                          (cons "cats" 7)
+                                          (cons "samoyeds" 2)
+                                          (cons "pomeranians" 3)
+                                          (cons "akitas" 0)
+                                          (cons "vizslas" 0)
+                                          (cons "goldfish" 5)
+                                          (cons "trees" 3)
+                                          (cons "cars" 2)
+                                          (cons "perfumes" 1))))
+          (tests (set-hash-table (make-hash-table :test #'equalp)
+                                 (list (cons "children" #'equalp)
+                                       (cons "cats" #'>) ; #'equalp
+                                       (cons "samoyeds" #'equalp)
+                                       (cons "pomeranians" #'<) ; #'equalp
+                                       (cons "akitas" #'equalp)
+                                       (cons "vizslas" #'equalp)
+                                       (cons "goldfish" #'<) ; #'equalp
+                                       (cons "trees" #'>) ; #'equalp
+                                       (cons "cars" #'equalp)
+                                       (cons "perfumes" #'equalp)))))
       (loop for s in sues
-         when
-           (= (length (loop for k being the hash-keys in gift-sue using (hash-value v)
-                         when (and (gethash k s)
-                                   (funcall (gethash k tests)
-                                            (gethash k s)
-                                            v))
-                         collect k))
-              3)
-         collect s))))
+            when
+            (= (length (loop for k being the hash-keys in gift-sue using (hash-value v)
+                             when (and (gethash k s)
+                                       (funcall (gethash k tests)
+                                                (gethash k s)
+                                                v))
+                               collect k))
+               3)
+            collect s))))
 
 (defun day-seventeen ()
   (labels ((fill-options (buckets litres)
