@@ -43,3 +43,59 @@
   (printf "Day 3-1: ~A possible triangles.~%" (length possible-triangles))
   (define possible-triangles-2 (filter (curry apply triangle?) (day3-2-input)))
   (printf "Day 3-2: ~A possible triangles.~%" (length possible-triangles-2)))
+
+(define (day4-room str)
+  (match-define (list names ... id-checksum) (string-split str "-"))
+  (match-define (list _ sector-id checksum) (regexp-match #rx"([0-9]+)\\[([a-zA-Z]+)\\]" id-checksum))
+  (list (string-join names "-") (string->number sector-id) checksum))
+
+(define (day4-input)
+  (map day4-room
+       (file->lines (string->path "../input/day4-1.txt"))))
+
+(define (valid-room? lst)
+  (match-define (list name sector-id checksum) lst)
+  (define letters (sort (group-by identity (sort (filter (lambda (c) (not (char=? c #\-)))
+                                                         (string->list name))
+                                                 char<?))
+                        >
+                        #:key length))
+  (define most-common (list->string (map first (take letters 5))))
+  (if (string=? most-common checksum)
+      sector-id
+      #f))
+
+(define (room-id room)
+  (or (valid-room? room)
+      0))
+
+(define (shift-char int char)
+  (if (char=? char #\-)
+      #\Space
+      (integer->char
+       (+ (modulo (+ (- (char->integer char)
+                        (char->integer #\a))
+                     int)
+                  (- (add1 (char->integer #\z))
+                     (char->integer #\a)))
+          (char->integer #\a)))))
+
+(define (real-room-name room)
+  (match-define (list name sector-id _) room)
+  (list->string (map (curry shift-char sector-id)
+                     (string->list name))))
+
+(define (northpole-room? room)
+  (match-define (list _ sector-id _) room)
+  (define real-name (real-room-name room))
+  (if (regexp-match? #rx"north" real-name)
+      (format "~A: ~A" real-name sector-id)
+      #f))
+
+(define (day4)
+  (define real-rooms (filter valid-room? (day4-input)))
+  (define sum-of-ids (apply + (map room-id real-rooms)))
+  (printf "Day 4-1: ~A~%" sum-of-ids)
+  (printf "Day 4-2:~%")
+  (define northpole-rooms (filter identity (map northpole-room? real-rooms)))
+  (map println northpole-rooms))
