@@ -4,7 +4,8 @@
          racket/list
          racket/match
          racket/string
-         racket/function)
+         racket/function
+         racket/hash)
 
 (define (all? predicate lst)
   (if (empty? lst)
@@ -99,3 +100,30 @@
   (printf "Day 4-2:~%")
   (define northpole-rooms (filter identity (map northpole-room? real-rooms)))
   (map println northpole-rooms))
+
+(define letter-map (hash))
+
+(define (word->letters w)
+  (for/fold ([res (hash)])
+            ([(letter index) (in-indexed w)])
+    (hash-set res index (list letter))))
+
+(define (merge-letters l1 l2)
+  (hash-union l1 l2
+              #:combine append))
+
+(define (extract-letter sort-by letters index)
+  (caar (sort (group-by identity (hash-ref letters index (list))) sort-by #:key length)))
+
+(define (day6)
+  (define words (file->lines (string->path "../input/day6-1.txt")))
+  (define letters
+    (for/fold ([res (hash)])
+              ([word (in-list words)])
+      (merge-letters res (word->letters word))))
+  (define most-common-word (list->string (for/list ([i (in-list (sort (hash-keys letters) <))])
+                                           (extract-letter > letters i))))
+  (printf "Day 6-1: ~A~%" most-common-word)
+  (define least-common-word (list->string (for/list ([i (in-list (sort (hash-keys letters) <))])
+                                            (extract-letter < letters i))))
+  (printf "Day 6-2: ~A~%" least-common-word))
