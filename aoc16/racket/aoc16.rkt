@@ -112,18 +112,26 @@
   (hash-union l1 l2
               #:combine append))
 
-(define (extract-letter sort-by letters index)
-  (caar (sort (group-by identity (hash-ref letters index (list))) sort-by #:key length)))
+(define (extract-letter-by letters index sort-by)
+  (caar (sort (group-by identity
+                        (hash-ref letters index (list)))
+              sort-by
+              #:key length)))
+
+(define (extract-word-by letters sort-by)
+  (list->string (for/list ([i (in-list (sort (hash-keys letters)
+                                             <))])
+                  (extract-letter-by letters i sort-by))))
+
+(define (words->letters words)
+  (for/fold ([res (hash)])
+            ([word (in-list words)])
+    (merge-letters res (word->letters word))))
 
 (define (day6)
   (define words (file->lines (string->path "../input/day6-1.txt")))
-  (define letters
-    (for/fold ([res (hash)])
-              ([word (in-list words)])
-      (merge-letters res (word->letters word))))
-  (define most-common-word (list->string (for/list ([i (in-list (sort (hash-keys letters) <))])
-                                           (extract-letter > letters i))))
+  (define letters (words->letters words))
+  (define most-common-word (extract-word-by letters >))
   (printf "Day 6-1: ~A~%" most-common-word)
-  (define least-common-word (list->string (for/list ([i (in-list (sort (hash-keys letters) <))])
-                                            (extract-letter < letters i))))
+  (define least-common-word (extract-word-by letters <))
   (printf "Day 6-2: ~A~%" least-common-word))
