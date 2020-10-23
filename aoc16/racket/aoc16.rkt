@@ -135,3 +135,46 @@
   (printf "Day 6-1: ~A~%" most-common-word)
   (define least-common-word (extract-word-by letters <))
   (printf "Day 6-2: ~A~%" least-common-word))
+
+(define (abba? s)
+  (and (>= (string-length s) 4)
+       (char=? (string-ref s 0)
+               (string-ref s 3))
+       (char=? (string-ref s 1)
+               (string-ref s 2))
+       (not (char=? (string-ref s 0)
+                    (string-ref s 1)))))
+
+(define (has-abba? s)
+  (for/or ([i (in-range (string-length s))])
+    (abba? (substring s i))))
+
+(define (day7-1-input)
+  (file->lines (string->path "../input/day7-1.txt")))
+
+(define (hypernet-split input-ip)
+  (define ip-list (if (list? input-ip)
+                      input-ip
+                      (string->list input-ip)))
+  (define-values (supernet leftover) (splitf-at ip-list
+                                          (lambda (c) (not (char=? c #\[)))))
+  (cond
+    [(empty? leftover) (values (list (list->string supernet))
+                               null)]
+    [else (define-values (hypernet leftover-ip) (splitf-at leftover
+                                                           (lambda (c) (not (char=? c #\])))))
+          (define-values (supernets hypernets) (hypernet-split (drop leftover-ip 1)))
+          (values (cons (list->string supernet)
+                        supernets)
+                  (cons (list->string (drop hypernet 1))
+                        hypernets))]))
+
+(define (tls? ip)
+  (define-values (supernets hypernets) (hypernet-split ip))
+  (and (ormap has-abba? supernets)
+       (not (ormap has-abba? hypernets))))
+
+(define (day7)
+  (define ips (day7-1-input))
+  (define has-tls (filter tls? ips))
+  (printf "Day 7-1: ~A ips has TLS.~%" (length has-tls)))
