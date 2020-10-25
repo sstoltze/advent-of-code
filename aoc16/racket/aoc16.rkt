@@ -174,7 +174,32 @@
   (and (ormap has-abba? supernets)
        (not (ormap has-abba? hypernets))))
 
+(define (aba? s)
+  (and (>= (string-length s) 3)
+       (char=? (string-ref s 0)
+               (string-ref s 2))
+       (substring s 0 3)))
+
+(define (has-bab? s aba)
+  (define bab (string (string-ref aba 1)
+                      (string-ref aba 0)
+                      (string-ref aba 1)))
+  (string-contains? s bab))
+
+(define (all-aba s)
+  (for/list [(i (in-range (string-length s)))
+             #:when (aba? (substring s i))]
+    (aba? (substring s i))))
+
+(define (ssl? ip)
+  (define-values (supernets hypernets) (hypernet-split ip))
+  (define abas (append-map all-aba supernets))
+  (for/or ([aba (in-list abas)])
+    (ormap (lambda (h) (has-bab? h aba)) hypernets)))
+
 (define (day7)
   (define ips (day7-1-input))
   (define has-tls (filter tls? ips))
-  (printf "Day 7-1: ~A ips has TLS.~%" (length has-tls)))
+  (printf "Day 7-1: ~A ips has TLS.~%" (length has-tls))
+  (define has-ssl (filter ssl? ips))
+  (printf "Day 7-2: ~A ips has SSL.~%" (length has-ssl)))
