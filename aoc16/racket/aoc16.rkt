@@ -180,11 +180,12 @@
                (string-ref s 2))
        (substring s 0 3)))
 
-(define (has-bab? s aba)
-  (define bab (string (string-ref aba 1)
-                      (string-ref aba 0)
-                      (string-ref aba 1)))
-  (string-contains? s bab))
+(define (aba->bab aba)
+  (string (string-ref aba 1)
+          (string-ref aba 0)
+          (string-ref aba 1)))
+
+(define has-bab? string-contains?)
 
 (define (all-aba s)
   (for/list [(i (in-range (string-length s)))
@@ -195,7 +196,9 @@
   (define-values (supernets hypernets) (hypernet-split ip))
   (define abas (append-map all-aba supernets))
   (for/or ([aba (in-list abas)])
-    (ormap (lambda (h) (has-bab? h aba)) hypernets)))
+    (ormap (lambda (h)
+             (h . has-bab? . (aba->bab aba)))
+           hypernets)))
 
 (define (day7)
   (define ips (day7-1-input))
