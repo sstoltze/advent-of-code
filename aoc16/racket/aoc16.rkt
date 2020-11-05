@@ -206,3 +206,74 @@
   (printf "Day 7-1: ~A ips has TLS.~%" (length has-tls))
   (define has-ssl (filter ssl? ips))
   (printf "Day 7-2: ~A ips has SSL.~%" (length has-ssl)))
+
+(define (day9-1-input)
+  (string-trim
+   (string-replace (file->string (string->path "../input/day9-1.txt"))
+                   #rx"\\s"
+                   "")))
+
+(define (take-marker l)
+  (cond [(empty? l) ""]
+        [(char=? (car l) #\()
+         (define-values (marker other) (splitf-at (drop l 1)
+                                                  (lambda (c) (not (char=? c #\))))))
+         (values marker (drop other 1))]
+        [else
+         (values '() l)]))
+
+(define (list-repeat lis n)
+  (if (zero? n)
+      '()
+      (append lis (list-repeat lis (sub1 n)))))
+
+(define (mark-split m)
+  (define-values (m-len m-repeat) (splitf-at m (lambda (c) (not (char=? c #\x)))))
+  (define len (string->number (list->string m-len)))
+  (define rep (string->number (list->string (drop m-repeat 1))))
+  (values len rep))
+
+(define (apply-marker m s)
+  (cond [(empty? m) (split-at s 1)]
+        [else (define-values (len rep) (mark-split m))
+              (define-values (to-be-repeated res) (split-at s len))
+              (values (list-repeat to-be-repeated rep)
+                      res)]))
+
+(define (contains-marker? l)
+  (member #\( l))
+
+(define (list-decompress l)
+  (cond [(empty? l) '()]
+        [else
+         (define-values (marker next) (take-marker l))
+         (define-values (to-append res) (apply-marker marker next))
+         (append to-append (list-decompress res))]))
+
+(define (decompress s)
+  (list->string (list-decompress (string->list s))))
+
+(define (day9)
+  (define input (day9-1-input))
+  (define decompressed (decompress input))
+  (printf "Day 9-1: Decompressed length ~A~%" (string-length decompressed))
+  (define decompressed-length-v2 (decompress-length-v2 input))
+  (printf "Day 9-2: Decompressed length (v2) ~A~%" decompressed-length-v2))
+
+(define (decompress-length-v2 s)
+  (list-decompress-length-v2 (string->list s)))
+
+(define (list-decompress-length-v2 l)
+  (cond [(empty? l) 0]
+        [else
+         (define-values (marker next) (take-marker l))
+         (define-values (first-length res) (apply-marker-length-v2 marker next))
+         (+ first-length
+            (list-decompress-length-v2 res))]))
+
+(define (apply-marker-length-v2 m s)
+  (cond [(empty? m) (values 1 (drop s 1))]
+        [else (define-values (len rep) (mark-split m))
+              (define-values (to-be-repeated res) (split-at s len))
+              (values (* rep (list-decompress-length-v2 to-be-repeated))
+                      res)]))
