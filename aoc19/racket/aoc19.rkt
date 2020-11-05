@@ -466,3 +466,30 @@
   (for/fold ([result 0])
             ([phase (permutations '(0 1 2 3 4))])
     (max result (run-amplifiers input phase))))
+
+(define (day13-1-input)
+  (file->intcode-program "../input/day13-1.txt"))
+
+(define (with-output-to-string f)
+  (define s (open-output-string))
+  (parameterize ([current-output-port s])
+    (f)
+    (get-output-string s)))
+
+(define (group-into l n)
+  (cond [(empty? l) '()]
+        [else
+         (define-values (g r) (split-at l n))
+         (cons g (group-into r n))]))
+
+(define (block? output-instruction)
+  (string=? (third output-instruction) "2"))
+
+(define (day13)
+  (define output (group-into (string-split
+                              (with-output-to-string
+                                (lambda ()
+                                  (intcode-interpreter (day13-1-input)))))
+                             3))
+  (define blocks (filter block? output))
+  (printf "Day 13-1: Number of blocks: ~A~%" (length blocks)))
