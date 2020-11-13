@@ -99,3 +99,106 @@ showHash hash = fmap toLower $ foldl (++) "" $ fmap (printf "%02X") hash
 
 day10Two :: [Int] -> String
 day10Two list = showHash . denseHash . getKnot $ runHashRounds 64 list newKnot
+
+data Direction = N | S | NE | NW | SE | SW deriving (Read, Show)
+
+newtype Path = Path [Direction] deriving (Show)
+
+data SplitPath = SplitPath { north :: Int
+                           , south :: Int
+                           , southwest :: Int
+                           , southeast :: Int
+                           , northwest :: Int
+                           , northeast :: Int
+                           } deriving (Show)
+
+simplifySplitPath :: SplitPath -> SplitPath
+simplifySplitPath sp
+  | n  >= 1 && s  >= 1 = simplifySplitPath $ sp { north = n - min n s
+                                                , south = s - min n s
+                                                }
+  | nw >= 1 && se >= 1 = simplifySplitPath $ sp { northwest = nw - min nw se
+                                                , southeast = se - min nw se
+                                                }
+  | ne >= 1 && sw >= 1 = simplifySplitPath $ sp { northeast = ne - min ne sw
+                                                , southwest = sw - min ne sw
+                                                }
+  | n  >= 1 && sw >= 1 = simplifySplitPath $ sp { north = n - min n sw
+                                                , southwest = sw - min n sw
+                                                , northwest = nw + min n sw
+                                                }
+  | n  >= 1 && se >= 1 = simplifySplitPath $ sp { north = n - min n se
+                                                , southeast = se - min n se
+                                                , northeast = ne + min n se
+                                                }
+  | s  >= 1 && nw >= 1 = simplifySplitPath $ sp { south = s - min s nw
+                                                , northwest = nw - min s nw
+                                                , southwest = sw + min s nw
+                                                }
+  | s  >= 1 && ne >= 1 = simplifySplitPath $ sp { south = s - min s ne
+                                                , northeast = ne - min s ne
+                                                , southeast = se + min s ne
+                                                }
+  | nw >= 1 && ne >= 1 = simplifySplitPath $ sp { northwest = nw - min nw ne
+                                                , northeast = ne - min nw ne
+                                                , north = n + min nw ne
+                                                }
+  | sw >= 1 && se >= 1 = simplifySplitPath $ sp { southwest = sw - min sw se
+                                                , southeast = se - min sw se
+                                                , south = s + min sw se
+                                                }
+  | otherwise = sp
+  where
+    n = north sp
+    s = south sp
+    nw = northwest sp
+    ne = northeast sp
+    sw = southwest sp
+    se = southeast sp
+
+splitPathLength :: SplitPath -> Int
+splitPathLength sp = n + s + nw + ne + sw + se
+  where
+    n = north sp
+    s = south sp
+    nw = northwest sp
+    ne = northeast sp
+    sw = southwest sp
+    se = southeast sp
+
+splitPath :: Path -> SplitPath
+splitPath (Path []) = SplitPath { north = 0
+                                , south = 0
+                                , southwest = 0
+                                , southeast = 0
+                                , northwest = 0
+                                , northeast = 0
+                                }
+splitPath (Path (d:ds)) = case d of
+                            N -> p { north = north p + 1 }
+                            S -> p { south = south p + 1 }
+                            NW -> p { northwest = northwest p + 1 }
+                            NE -> p { northeast = northeast p + 1 }
+                            SW -> p { southwest = southwest p + 1 }
+                            SE -> p { southeast = southeast p + 1 }
+  where
+    p = splitPath (Path ds)
+
+readPath :: String -> Path
+readPath s = Path $ fmap read $ splitOn "," $ fmap toUpper s
+
+day11Input :: IO Path
+day11Input = do
+  s <- readFile "../input/day11-1.txt"
+  return $ readPath s
+
+day11Length = splitPathLength . simplifySplitPath . splitPath
+
+day11 :: IO ()
+day11 = do
+  inputPath <- day11Input
+  let len = day11Length inputPath
+  putStrLn $ "Day 11-1: Path length is " ++ show len
+  let Path p = inputPath
+  let maxDistance = maximum $ fmap (day11Length . Path) $ inits p
+  putStrLn $ "Day 11-2: Max distance on the trip was " ++ show maxDistance
