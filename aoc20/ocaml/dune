@@ -1,4 +1,4 @@
 (executables
-  (names day1)
+  (names day1 day2)
   (ocamlopt_flags (:standard -O3))
   (libraries containers))
