@@ -1,6 +1,8 @@
 type direction = N | S | E | W
 type movement = L | R | F
-type instruction = Dir of direction * int | Mov of movement * int
+type instruction =
+    | Dir of direction * int
+    | Mov of movement * int
 type ship = { facing: direction; x: int; y: int; waypoint: int * int }
 
 let initial_ship = { facing = E; x = 0; y = 0; waypoint = (10,1) }

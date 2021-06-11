@@ -3,7 +3,7 @@ let parse_input s =
   |> String.trim
   |> String.split_on_char '\n'
   |> (function
-        [time; timetable] -> (int_of_string time, String.split_on_char ',' timetable)
+      | [time; timetable] -> (int_of_string time, String.split_on_char ',' timetable)
       | _ -> raise Exit)
 
 let input = CCIO.(with_in "../input/day13.txt" read_all) |> parse_input
@@ -40,7 +40,7 @@ let rec make_congruence remainder modulo =
 
 let congruences_of_timetable timetable =
   let rec congruences res count = function
-      [] -> res
+    | [] -> res
     | ("x" :: xs) -> congruences res (Z.succ count) xs
     | x :: xs -> congruences (make_congruence (Z.neg count) (Z.of_string x) :: res) (Z.succ count) xs
   in congruences [] Z.zero timetable
@@ -51,12 +51,12 @@ let rec chinese_remainder =
   let combine_congruences x1 x2 =
     let (_, m1, m2) = Z.gcdext x1.modulo x2.modulo
     in let new_cong = Z.(x1.congruent * x2.modulo * m2 + x2.congruent * x1.modulo * m1)
-       and new_mod = Z.(x1.modulo * x2.modulo)
-       in make_congruence new_cong new_mod
+    and new_mod = Z.(x1.modulo * x2.modulo)
+    in make_congruence new_cong new_mod
   in function
-    [] -> raise Exit
-  | cong :: [] -> cong.congruent
-  | x1 :: x2 :: xs -> chinese_remainder ((combine_congruences x1 x2) :: xs)
+    | [] -> raise Exit
+    | cong :: [] -> cong.congruent
+    | x1 :: x2 :: xs -> chinese_remainder ((combine_congruences x1 x2) :: xs)
 
 (* Very inefficient *)
 let part_two = congruences |> chinese_remainder
