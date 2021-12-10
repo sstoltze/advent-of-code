@@ -22,6 +22,8 @@ description:         Please see the README on GitHub at <https://github.com/ssto
 dependencies:
 - base >= 4.7 && < 5
 - text
+- split
+- containers
 
 library:
   source-dirs: src
