@@ -4,6 +4,7 @@ module Main where
 
 import qualified Data.Bits       as B
 import qualified Data.Char       as C
+import qualified Data.List       as L
 import qualified Data.List.Split as Split
 import qualified Data.Map.Strict as Map
 
@@ -100,13 +101,13 @@ day2 = do
 
 -- Day 6
 day6Input :: IO LanternfishSchool
-day6Input = readFish . fmap read . Split.splitOn "," <$> readFile "../input/day6.txt"
+day6Input = readMap . fmap read . Split.splitOn "," <$> readFile "../input/day6.txt"
 
 -- Represents days-to-offspring -> number of fish
 type LanternfishSchool = Map.Map Int Int
 
-readFish :: [Int] -> LanternfishSchool
-readFish = foldl (\acc k -> Map.insertWith (+) k 1 acc) Map.empty
+readMap :: [Int] -> Map.Map Int Int
+readMap = foldl (\acc k -> Map.insertWith (+) k 1 acc) Map.empty
 
 updateSchool :: Int -> LanternfishSchool -> LanternfishSchool
 updateSchool 0 s = s
@@ -125,3 +126,32 @@ day6 = do
   fish <- day6Input
   putStrLn $ "After 80 days, there are " ++ show (countFish $ updateSchool 80 fish) ++ " fish."
   putStrLn $ "After 256 days, there are " ++ show (countFish $ updateSchool 256 fish) ++ " fish."
+
+-- Day 7
+day7Input :: IO CrabAlignment
+day7Input = readMap . fmap read . Split.splitOn "," <$> readFile "../input/day7.txt"
+
+-- Mapping horizontal position to number of crabs
+type CrabAlignment = Map.Map Int Int
+
+compareCrabs :: (Int, Int) -> (Int, Int) -> Ordering
+compareCrabs (x, _) (y, _) = compare x y
+
+costToAlign :: (Int -> Int) -> CrabAlignment -> Int -> Int
+costToAlign positionCost crabs n = foldl (\acc (alignment, count) -> acc + positionCost (abs (alignment - n)) * count) 0 (Map.toList crabs)
+
+naiveCost :: Int -> Int
+naiveCost = id
+
+triangleCost :: Int -> Int
+triangleCost k = k * (k + 1) `div` 2
+
+day7 :: IO ()
+day7 = do
+  crabs <- day7Input
+  let crabList = Map.toList crabs
+  let crabRange = [fst (L.minimumBy compareCrabs crabList) .. fst (L.maximumBy compareCrabs crabList)]
+  let minimumCost = minimum $ fmap (costToAlign naiveCost crabs) crabRange
+  putStrLn $ "The minium cost to align the crabs is " ++ show minimumCost
+  let minimumCost' = minimum $ fmap (costToAlign triangleCost crabs) crabRange
+  putStrLn $ "The minium cost to align the crabs with new requirements is " ++ show minimumCost'
