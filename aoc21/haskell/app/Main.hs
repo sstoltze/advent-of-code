@@ -99,6 +99,17 @@ day2 = do
       ++ ". The product is "
       ++ show (part2Depth * part2Hori)
 
+-- Day 3
+day3Input :: IO ([Int], Int)
+day3Input = (\ls -> (fmap bitToNumber ls, length $ head ls)) . lines <$> readFile "../input/day3.txt"
+
+bitToNumber :: String -> Int
+bitToNumber = foldl (\acc x -> acc * 2 + C.digitToInt x) 0
+
+-- day3 :: IO ()
+-- day3 = do
+--   (input, bitSize) <- day3Input
+
 -- Day 6
 day6Input :: IO LanternfishSchool
 day6Input = readMap . fmap read . Split.splitOn "," <$> readFile "../input/day6.txt"
