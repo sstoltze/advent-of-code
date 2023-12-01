@@ -1,4 +1,5 @@
 defmodule Aoc23 do
+  # @related [tests](test/aoc23_test.exs)
   @moduledoc """
   Advent of Code, 2023 - now in elixir
   """

@@ -1,4 +1,5 @@
 defmodule Aoc23Test do
+  # @related [subject](lib/aoc23.ex)
   use ExUnit.Case
   doctest Aoc23
 
