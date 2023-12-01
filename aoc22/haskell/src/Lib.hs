@@ -1,7 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Lib where
+import Data.Text (Text, lines, pack)
+import Data.Text.Read (decimal)
 
-readLines :: FilePath -> IO [String]
-readLines f = fmap lines $ readFile f
+readLines :: FilePath -> IO [Text]
+readLines f = fmap (Data.Text.lines . pack) $ readFile f
+
+textToInt :: Text -> Int
+textToInt t = either (const (-1)) fst $ decimal t
 
 groupBySeparator :: Eq a => a -> [a] -> [[a]]
 groupBySeparator sep' xs' = groupBy' sep' xs' [] []
