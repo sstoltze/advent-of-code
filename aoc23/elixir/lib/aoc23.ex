@@ -1,18 +1,9 @@
 defmodule Aoc23 do
   @moduledoc """
-  Documentation for `Aoc23`.
+  Advent of Code, 2023 - now in elixir
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Aoc23.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def day1 do
+    _input = Utils.input_day(1, 1)
   end
 end
