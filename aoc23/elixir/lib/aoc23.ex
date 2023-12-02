@@ -100,11 +100,10 @@ defmodule Aoc23 do
       games =
         input |> Enum.map(&Parser.parse_game!/1)
 
-      valid_games =
-        Enum.filter(games, &possible_game?(constraint, &1))
-
       sum_of_valid_games =
-        valid_games |> Enum.reduce(0, fn [{:game, n} | _hands], acc -> n + acc end)
+        games
+        |> Enum.filter(&possible_game?(constraint, &1))
+        |> Enum.reduce(0, fn [{:game, n} | _hands], acc -> n + acc end)
 
       power_sum = games |> Enum.map(fn g -> g |> minimum_required |> power end) |> Enum.sum()
 
