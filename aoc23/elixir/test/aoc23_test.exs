@@ -39,4 +39,20 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 > |> String.trim() |> String.split("\n")
     assert {8, 2286} = Aoc23.Day2.day2(input)
   end
+
+  test "day3-1 example" do
+    input = ~S<
+467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..
+> |> String.trim() |> String.split("\n")
+    assert {4361, 467_835} = Aoc23.Day3.day3(input)
+  end
 end
