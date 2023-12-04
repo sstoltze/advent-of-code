@@ -1,4 +1,5 @@
 defmodule Aoc23.Day3 do
+  # @related [tests](test/aoc23_test.exs)
   def input(), do: Aoc23.input_day(3)
 
   def day3(input \\ input()) do

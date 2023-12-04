@@ -1,4 +1,5 @@
 defmodule Aoc23.Day1 do
+  # @related [tests](test/aoc23_test.exs)
   def input do
     Aoc23.input_day(1, 1)
   end

@@ -1,4 +1,5 @@
 defmodule Aoc23.Day2 do
+  # @related [tests](test/aoc23_test.exs)
   defmodule Parser do
     import NimbleParsec
     colour = choice([string("blue"), string("red"), string("green")])

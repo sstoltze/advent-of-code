@@ -9,4 +9,16 @@ defmodule Aoc23 do
   end
 
   def input_day(i, n \\ 1), do: read_lines("../input/day#{i}-#{n}.txt")
+
+  defmodule ParserHelpers do
+    import NimbleParsec
+
+    def number(combinator \\ empty()), do: combinator |> integer(min: 1)
+    def whitespace(combinator \\ empty()), do: combinator |> times(string(" "), min: 1)
+
+    def list_of(combinator) do
+      combinator
+      |> repeat(ignore(whitespace()) |> concat(combinator))
+    end
+  end
 end
