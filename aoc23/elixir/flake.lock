@@ -1,5 +1,24 @@
 {
   "nodes": {
+    "emacsConfig": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1701704782,
+        "narHash": "sha256-haREiOInybqFnEceDhGrjsi+M3w7hLVpHCpOuK62Dzw=",
+        "owner": "sstoltze",
+        "repo": "emacs-config",
+        "rev": "13f8a1e99e0b83ea106d1a6061b2b2b1720b76ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sstoltze",
+        "repo": "emacs-config",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -14,31 +33,27 @@
       },
       "original": {
         "owner": "numtide",
-        "ref": "main",
         "repo": "flake-utils",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1701336116,
-        "narHash": "sha256-kEmpezCR/FpITc6yMbAh4WrOCiT2zg5pSjnKrq51h5Y=",
+        "lastModified": 1701432845,
+        "narHash": "sha256-06sd2rQ+DPMSueh+hW4MiXbpMSdhQHJOi/sw0vuwqvs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f5c27c6136db4d76c30e533c20517df6864c46ee",
+        "rev": "77da99a144cd341408308e0a37622f5edcc6c5ba",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
+        "id": "nixpkgs",
+        "type": "indirect"
       }
     },
     "root": {
       "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "emacsConfig": "emacsConfig"
       }
     },
     "systems": {
