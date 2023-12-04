@@ -2,8 +2,7 @@ defmodule Aoc23.Day2 do
   # @related [tests](test/aoc23_test.exs)
   defmodule Parser do
     import NimbleParsec
-    colour = choice([string("blue"), string("red"), string("green")])
-    int = integer(min: 1)
+    import Aoc23.ParserHelpers
 
     def parse_stones(args) do
       case args do
@@ -12,27 +11,23 @@ defmodule Aoc23.Day2 do
       end
     end
 
-    stones = int |> concat(ignore(string(" "))) |> concat(colour) |> reduce(:parse_stones)
+    colour = choice([string("blue"), string("red"), string("green")])
+
+    stones = number() |> ignore(whitespace()) |> concat(colour) |> reduce(:parse_stones)
 
     hand =
-      stones
-      |> concat(ignore(string(", ")))
-      # A hand is a (possibly empty) list of stones
-      |> repeat()
-      # But with at least one
-      |> concat(stones)
-      # Followed by either a ; or the end of the string
-      |> concat(ignore(choice([string("; "), eos()])))
+      list_of(stones, string(",") |> whitespace())
       |> reduce({Enum, :reduce, [%{}, &Map.merge/2]})
 
-    hands = hand |> repeat() |> eos()
+    hands = list_of(hand, string(";") |> whitespace())
 
     game =
-      ignore(string("Game "))
-      |> concat(int)
+      ignore(string("Game") |> whitespace())
+      |> number()
       |> unwrap_and_tag(:game)
-      |> concat(ignore(string(": ")))
+      |> ignore(string(":") |> whitespace())
       |> concat(hands)
+      |> eos
 
     defparsec(:colour, colour)
     defparsec(:game, game)

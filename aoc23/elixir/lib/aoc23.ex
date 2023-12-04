@@ -16,9 +16,9 @@ defmodule Aoc23 do
     def number(combinator \\ empty()), do: combinator |> integer(min: 1)
     def whitespace(combinator \\ empty()), do: combinator |> times(string(" "), min: 1)
 
-    def list_of(combinator) do
+    def list_of(combinator, separator \\ whitespace()) do
       combinator
-      |> repeat(ignore(whitespace()) |> concat(combinator))
+      |> repeat(ignore(separator) |> concat(combinator))
     end
   end
 end
