@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       Rps
+      Rucksack
   other-modules:
       Paths_aoc22
   autogen-modules:

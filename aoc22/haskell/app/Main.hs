@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Lib
-import Rps
+import           Lib
+import           Rps
+import           Rucksack
 -- import Data.Text (Text)
-import Data.List (sort)
+import           Data.List (sort)
 
 main :: IO ()
 main = day1
@@ -30,3 +31,17 @@ day2 = do
   let updatedScore = sum $ fmap (toScore . updatedParseGame) fileInput
   putStrLn "Updated score:"
   print updatedScore
+
+day3 :: IO ()
+day3 = do
+  putStrLn "Day 3"
+  fileInput <- readLines "../input/day3-1.txt"
+  let rucksacks = fmap parseRucksack fileInput
+  let inBothPockets = concat $ fmap rucksackIntersection rucksacks
+  let summedPriorities = sum $ fmap priority inBothPockets
+  putStrLn "Summed priorities:"
+  print summedPriorities
+  let badges = fmap findBadges $ chunksOf 3 rucksacks
+  let badgePriorities = sum $ fmap (sum . fmap priority) badges
+  putStrLn "Summed badges:"
+  print badgePriorities
