@@ -1,0 +1,16 @@
+defmodule Aoc23.Day12Test do
+  use ExUnit.Case
+
+  test "day 12 example" do
+    input = ~S<
+???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1
+> |> String.trim() |> String.split("\n")
+
+    assert {21, _} = Aoc23.Day12.day12(input)
+  end
+end
