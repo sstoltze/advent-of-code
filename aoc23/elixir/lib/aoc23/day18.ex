@@ -45,17 +45,12 @@ defmodule Aoc23.Day18 do
     {rows, cols} = Enum.unzip(loop) |> elem(0) |> Enum.unzip()
     max_row = rows |> Enum.map(&abs/1) |> Enum.max()
     max_col = cols |> Enum.map(&abs/1) |> Enum.max()
-    map = Enum.map(-max_row..max_row, fn i -> Enum.map(-max_col..max_col, fn j -> {i, j} end) end)
+
+    map =
+      Enum.map(-max_row..max_row, fn i -> Enum.map(-max_col..max_col, fn j -> {i, j} end) end)
 
     crossings =
       calculate_crossings(map, loop)
-
-    map_with_crossings =
-      crossings
-      |> Enum.map(fn row -> row |> Enum.map(&to_string/1) |> Enum.join("") end)
-      |> Enum.join("\n")
-
-    File.write!("/tmp/map", map_with_crossings)
 
     loop_and_inside =
       Enum.flat_map(
@@ -107,12 +102,10 @@ defmodule Aoc23.Day18 do
   end
 
   def calculate_crossings(map, loop) do
-    Enum.map(0..(Enum.count(map) - 1), fn i ->
-      Enum.reduce(0..(Enum.count(Enum.at(map, i)) - 1), {0, [], nil, nil}, fn j,
-                                                                              {current_crossing,
-                                                                               acc,
-                                                                               entering_instructions,
-                                                                               last_point_instructions} ->
+    Enum.map(map, fn row ->
+      Enum.reduce(row, {0, [], nil, nil}, fn {i, j},
+                                             {current_crossing, acc, entering_instructions,
+                                              last_point_instructions} ->
         case in_loop({i, j}, loop) do
           {_, instructions} ->
             if jumped_loop_path?(last_point_instructions, instructions) do
