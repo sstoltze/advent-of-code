@@ -26,3 +26,4 @@ aoc23-*.tar
 /tmp/
 
 /.direnv/
+/.elixir-tools/
