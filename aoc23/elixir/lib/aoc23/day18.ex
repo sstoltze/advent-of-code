@@ -51,41 +51,23 @@ defmodule Aoc23.Day18 do
     loop = dig_loop(instructions)
     loop_area = calculate_loop_area(loop)
 
-    # colour_loop = instructions |> Enum.map(&Keyword.get(&1, :colour)) |> dig_loop()
-    # colour_loop_area = calculate_loop_area(colour_loop)
+    colour_loop = instructions |> Enum.map(&Keyword.get(&1, :colour)) |> dig_loop()
+    colour_loop_area = calculate_loop_area(colour_loop)
 
     {
       loop_area,
-      0
-      # colour_loop_area
+      # 0
+      colour_loop_area
     }
   end
 
   def calculate_loop_area(loop) do
-    map = build_map(loop)
-
     crossings =
-      calculate_crossings(map, loop)
+      calculate_crossings(loop)
 
-    Enum.sum(crossings)
-  end
-
-  def build_map(loop) do
-    start = List.first(loop)
-    row = Keyword.get(start, :row)
-    col = Keyword.get(start, :col)
-
-    {row_min, row_max, col_min, col_max} =
-      Enum.reduce(loop, {Enum.min(row), Enum.max(row), Enum.min(col), Enum.max(col)}, fn
-        part, {row_min, row_max, col_min, col_max} ->
-          part_row = Keyword.get(part, :row)
-          part_col = Keyword.get(part, :col)
-
-          {min(row_min, Enum.min(part_row)), max(row_max, Enum.max(part_row)),
-           min(col_min, Enum.min(part_col)), max(col_max, Enum.max(part_col))}
-      end)
-
-    Enum.map(row_min..row_max, fn i -> Enum.map(col_min..col_max, fn j -> {i, j} end) end)
+    Enum.reduce(crossings, 0, fn {k, {_, a, _, _}}, acc ->
+      acc + a * Enum.count(k)
+    end)
   end
 
   def next({i, j}, instruction) do
@@ -153,65 +135,150 @@ defmodule Aoc23.Day18 do
     |> update_start()
   end
 
-  def calculate_crossings(map, loop) do
-    Enum.map(map, fn row ->
-      row_index = row |> Enum.at(0) |> elem(0)
+  def mapset_to_ranges(ms) do
+    if Enum.empty?(ms) do
+      []
+    else
+      sorted = ms |> MapSet.to_list() |> Enum.sort()
+      [first | rest] = sorted
 
-      loop_parts_in_row =
-        loop
-        |> Enum.filter(fn p -> row_index in Keyword.get(p, :row) end)
-        |> Enum.sort_by(&Enum.min(Keyword.get(&1, :col)))
-
-      Enum.reduce(loop_parts_in_row, {0, 0, nil, nil}, fn part,
-                                                          {current_crossing, loop_or_inside_count,
-                                                           previous_corner, last_loop_part} ->
-        {col_min, col_max} = part |> Keyword.get(:col) |> Enum.min_max()
-        from_loop_count = col_max - col_min + 1
-
-        crossing_number_from_loop =
-          case Keyword.get(part, :corner) do
-            false ->
-              case Keyword.get(part, :direction) do
-                :U -> 1
-                :D -> 1
-                _ -> 0
-              end
-
-            true ->
-              case previous_corner do
-                nil ->
-                  0
-
-                _ ->
-                  calculate_new_crossing(previous_corner, part)
-              end
-          end
-
-        count_from_inside =
-          if rem(current_crossing, 2) == 1 do
-            prev_loop_col_max = last_loop_part |> Keyword.get(:col) |> Enum.max()
-            col_min - prev_loop_col_max - 1
+      {_, _, last, rest} =
+        Enum.reduce(rest, {first, first, first..first, []}, fn j,
+                                                               {current_start, last_seen,
+                                                                _in_progress, final} ->
+          if j > last_seen + 1 do
+            {j, j, j..j, [current_start..last_seen | final]}
           else
-            0
+            {current_start, j, current_start..j, final}
+          end
+        end)
+
+      [last | rest]
+    end
+  end
+
+  def calculate_intersection_range(range, other) do
+    ms = MapSet.new(range)
+    other_ms = MapSet.new(other)
+
+    {
+      mapset_to_ranges(MapSet.difference(ms, other_ms)),
+      mapset_to_ranges(MapSet.intersection(ms, other_ms)),
+      mapset_to_ranges(MapSet.difference(other_ms, ms))
+    }
+  end
+
+  def crossing_update(
+        part,
+        {current_crossing, loop_or_inside_count, previous_corner, last_loop_part}
+      ) do
+    {col_min, col_max} = part |> Keyword.get(:col) |> Enum.min_max()
+    from_loop_count = col_max - col_min + 1
+
+    crossing_number_from_loop =
+      case Keyword.get(part, :corner) do
+        false ->
+          case Keyword.get(part, :direction) do
+            :U -> 1
+            :D -> 1
+            _ -> 0
           end
 
-        new_corner =
-          case Keyword.get(part, :corner) do
-            true ->
-              if is_nil(previous_corner) do
-                part
-              else
-                nil
-              end
+        true ->
+          case previous_corner do
+            nil ->
+              0
 
-            false ->
-              previous_corner
+            _ ->
+              calculate_new_crossing(previous_corner, part)
+          end
+      end
+
+    count_from_inside =
+      if rem(current_crossing, 2) == 1 do
+        prev_loop_col_max = last_loop_part |> Keyword.get(:col) |> Enum.max()
+        col_min - prev_loop_col_max - 1
+      else
+        0
+      end
+
+    new_corner =
+      case Keyword.get(part, :corner) do
+        true ->
+          if is_nil(previous_corner) do
+            part
+          else
+            nil
           end
 
-        {current_crossing + crossing_number_from_loop,
-         loop_or_inside_count + from_loop_count + count_from_inside, new_corner, part}
-      end)
-      |> elem(1)
+        false ->
+          previous_corner
+      end
+
+    {current_crossing + crossing_number_from_loop,
+     loop_or_inside_count + from_loop_count + count_from_inside, new_corner, part}
+  end
+
+  def calculate_crossings(loop) do
+    loop_parts_by_start = loop |> Enum.sort_by(&Enum.min(Keyword.get(&1, :col)))
+
+    Enum.reduce(loop_parts_by_start, %{}, fn part, acc ->
+      part_row = Keyword.get(part, :row)
+
+      case Map.keys(acc) do
+        [] ->
+          %{part_row => crossing_update(part, {0, 0, nil, nil})}
+
+        keys ->
+          {new, new_acc} =
+            Enum.reduce(keys, {[], %{}}, fn in_progress, {new, updated} ->
+              val = Map.get(acc, in_progress)
+
+              {new_ranges, intersections, unaltered_ranges} =
+                calculate_intersection_range(part_row, in_progress)
+
+              {case {new, new_ranges} do
+                 {nil, _} -> nil
+                 {_, []} -> nil
+                 _ -> new_ranges ++ new
+               end,
+               updated
+               |> Map.merge(
+                 intersections
+                 |> Enum.map(fn r -> %{r => crossing_update(part, val)} end)
+                 |> Enum.reduce(%{}, &Map.merge/2)
+               )
+               |> Map.merge(
+                 unaltered_ranges
+                 |> Enum.map(fn r -> %{r => val} end)
+                 |> Enum.reduce(%{}, &Map.merge/2)
+               )}
+            end)
+
+          not_in_progress =
+            case new do
+              nil ->
+                []
+
+              _ ->
+                Enum.reduce(
+                  new |> List.wrap(),
+                  &(calculate_intersection_range(&1, &2) |> elem(1) |> List.first([]))
+                )
+            end
+
+          case not_in_progress do
+            [] ->
+              new_acc
+
+            range ->
+              new_acc
+              |> Map.put(
+                range,
+                crossing_update(part, {0, 0, nil, nil})
+              )
+          end
+      end
     end)
   end
 

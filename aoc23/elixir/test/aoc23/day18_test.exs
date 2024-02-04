@@ -19,6 +19,6 @@ L 2 (#015232)
 U 2 (#7a21e3)
 > |> String.trim() |> String.split("\n")
     # Part 2: 952_408_144_115
-    assert {62, _} = Aoc23.Day18.day18(input)
+    assert {62, 952_408_144_115} = Aoc23.Day18.day18(input)
   end
 end
