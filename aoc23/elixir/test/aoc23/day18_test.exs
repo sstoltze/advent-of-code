@@ -21,4 +21,9 @@ U 2 (#7a21e3)
     # Part 2: 952_408_144_115
     assert {62, 952_408_144_115} = Aoc23.Day18.day18(input)
   end
+
+  test "shoelace formula" do
+    square = [{0, 0}, {0, 2}, {2, 2}, {2, 0}]
+    assert 9 == Aoc23.Day18.calculate_loop_area(square)
+  end
 end
