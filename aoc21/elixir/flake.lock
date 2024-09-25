@@ -1,0 +1,45 @@
+{
+  "nodes": {
+    "emacsConfig": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1727280402,
+        "narHash": "sha256-XwFHQzLqc9EvbJe/M4AG1sFQvyNJwTFnekntQ5bfVLY=",
+        "owner": "sstoltze",
+        "repo": "emacs-config",
+        "rev": "d65fa88c3b625d6638103fa8e434882ddf203026",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sstoltze",
+        "repo": "emacs-config",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1727140925,
+        "narHash": "sha256-ZHSasdLwEEjSOD/WTW1o7dr3/EjuYsdwYB4NSgICZ2I=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "189e5f171b163feb7791a9118afa778d9a1db81f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "emacsConfig": "emacsConfig"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
