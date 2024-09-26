@@ -13,22 +13,22 @@ defmodule Aoc21.Day16 do
           _ -> :unknown
         end
 
-      data = parse_body(body, type)
+      _data = parse_body(body, type)
 
       %{version: version, type: type_id}
     end
 
-    def parse_body(body, :literal) do
+    def parse_body(_body, :literal) do
       nil
     end
 
-    def parse_body(body, :unknown) do
+    def parse_body(_body, :unknown) do
       nil
     end
   end
 
   def input do
-    Aoc21.input_day(1, 1)
+    Aoc21.input_day(16, 1)
   end
 
   def day16(input \\ input()) do
