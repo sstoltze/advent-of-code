@@ -2,9 +2,11 @@ defmodule Aoc21.Day16 do
   # @related [test](aoc21/elixir/test/aoc21/day16_test.exs)
 
   defmodule Packet do
-    def parse(input) do
-      [packet] = input
+    def parse(input) when is_list(input) do
+      Enum.map(input, &parse/1)
+    end
 
+    def parse(packet) do
       <<version::3, type_id::3, body::bitstring>> = Base.decode16!(packet)
 
       type =
@@ -13,17 +15,24 @@ defmodule Aoc21.Day16 do
           _ -> :unknown
         end
 
-      _data = parse_body(body, type)
+      data = parse_body(body, type)
 
-      %{version: version, type: type_id}
-    end
-
-    def parse_body(_body, :literal) do
-      nil
+      %{version: version, type: type_id, value: data}
     end
 
     def parse_body(_body, :unknown) do
       nil
+    end
+
+    def parse_body(body, :literal, current_value \\ 0) do
+      <<last::1, number::4, rest::bitstring>> = body
+
+      new_value = 16 * current_value + number
+
+      case last do
+        1 -> parse_body(rest, :literal, new_value)
+        0 -> new_value
+      end
     end
   end
 
@@ -32,8 +41,8 @@ defmodule Aoc21.Day16 do
   end
 
   def day16(input \\ input()) do
-    packet = Packet.parse(input)
-    dbg(packet)
+    _packet = Packet.parse(input)
+
     {0, 0}
   end
 end
