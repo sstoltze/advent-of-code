@@ -16,7 +16,13 @@ defmodule Aoc21.Day16 do
       type =
         case type_id do
           4 -> :literal
-          _ -> :operator
+          0 -> :sum
+          1 -> :product
+          2 -> :minimum
+          3 -> :maximum
+          5 -> :greater_than
+          6 -> :less_than
+          7 -> :equal_to
         end
 
       body
@@ -24,22 +30,27 @@ defmodule Aoc21.Day16 do
       |> Map.merge(%{version: version, type: type})
     end
 
-    defp parse_body(<<0::1, length_in_bits::15, subpackets::bitstring>>, :operator) do
-      <<packets::size(length_in_bits), _rest::bitstring>> = subpackets
-      parse_subpackets(<<packets::size(length_in_bits)>>)
+    defp parse_body(body, :literal) do
+      parse_literal(body, 0)
     end
 
-    defp parse_body(<<1::1, number_of_subpackets::11, subpackets::bitstring>>, :operator) do
+    defp parse_body(<<0::1, length_in_bits::15, subpackets::bitstring>>, _) do
+      <<packets::size(length_in_bits), rest::bitstring>> = subpackets
+
+      <<packets::size(length_in_bits)>> |> parse_subpackets() |> Map.put(:rest, rest)
+    end
+
+    defp parse_body(<<1::1, number_of_subpackets::11, subpackets::bitstring>>, _) do
       parse_subpackets(subpackets, number_of_subpackets)
     end
 
-    defp parse_body(body, :literal, current_value \\ 0) do
+    defp parse_literal(body, current_value) do
       <<last::1, number::4, rest::bitstring>> = body
 
       new_value = 16 * current_value + number
 
       case last do
-        1 -> parse_body(rest, :literal, new_value)
+        1 -> parse_literal(rest, new_value)
         0 -> %{value: new_value, rest: rest}
       end
     end
@@ -71,17 +82,60 @@ defmodule Aoc21.Day16 do
   def day16(input \\ input()) do
     packet = Packet.parse(input)
 
-    {sum_versions(packet), 0}
+    {sum_versions(packet), packet_value(packet)}
   end
 
-  defp sum_versions(packet) do
+  def sum_versions(packet) do
     packet.version +
       case packet.type do
         :literal ->
           0
 
-        :operator ->
+        _ ->
           Enum.reduce(packet.subpackets, 0, fn packet, acc -> acc + sum_versions(packet) end)
       end
+  end
+
+  def packet_value(%{value: value, type: :literal}) do
+    value
+  end
+
+  def packet_value(%{subpackets: subpackets, type: type}) do
+    packet_values = Enum.map(subpackets, &packet_value/1)
+
+    case type do
+      :sum ->
+        Enum.sum(packet_values)
+
+      :product ->
+        Enum.product(packet_values)
+
+      :minimum ->
+        Enum.min(packet_values)
+
+      :maximum ->
+        Enum.max(packet_values)
+
+      :greater_than ->
+        if Enum.at(packet_values, 0) > Enum.at(packet_values, 1) do
+          1
+        else
+          0
+        end
+
+      :less_than ->
+        if Enum.at(packet_values, 0) < Enum.at(packet_values, 1) do
+          1
+        else
+          0
+        end
+
+      :equal_to ->
+        if Enum.at(packet_values, 0) == Enum.at(packet_values, 1) do
+          1
+        else
+          0
+        end
+    end
   end
 end
