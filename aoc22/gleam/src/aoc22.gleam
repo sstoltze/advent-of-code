@@ -1,4 +1,5 @@
 import aoc22/day6
+import aoc22/day7
 import argv
 import file_streams/file_stream
 import file_streams/file_stream_error
@@ -12,7 +13,7 @@ fn read_lines(
   result: List(String),
 ) -> List(String) {
   case file_stream.read_line(stream) {
-    Ok(line) -> read_lines(stream, [line, ..result])
+    Ok(line) -> read_lines(stream, [string.trim(line), ..result])
     Error(_) -> list.reverse(result)
   }
 }
@@ -41,7 +42,8 @@ pub fn main() {
 
   case day {
     "6" -> day6.main(input)
-    _ -> #(0, 0)
+    "7" -> day7.main(input)
+    _ -> panic
   }
   |> io.debug()
 }
