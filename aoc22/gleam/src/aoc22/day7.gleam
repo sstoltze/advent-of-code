@@ -1,3 +1,4 @@
+// @related [test](aoc22/gleam/test/aoc22/day7_test.gleam)
 import gleam/list
 
 pub type FileSystem {
@@ -5,11 +6,11 @@ pub type FileSystem {
   Directory(name: String, contents: List(FileSystem))
 }
 
-pub fn sum_of_dirs(file_system: FileSystem) -> Int {
+pub fn filesystem_size(file_system: FileSystem) -> Int {
   case file_system {
     Directory(contents: contents, ..) ->
       list.fold(over: contents, from: 0, with: fn(acc, fs) {
-        acc + sum_of_dirs(fs)
+        acc + filesystem_size(fs)
       })
     File(size: size, ..) -> size
   }
