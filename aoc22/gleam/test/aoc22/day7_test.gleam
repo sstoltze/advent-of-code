@@ -48,3 +48,25 @@ $ ls
     ]),
   )
 }
+
+pub fn nested_directories_test() {
+  let input =
+    "$ cd /
+$ ls
+dir a
+$ cd a
+$ ls
+dir a
+$ cd a
+$ ls
+20 a"
+    |> string.split("\n")
+  day7.build_file_system(input)
+  |> should.equal(
+    Directory(name: "/", contents: [
+      Directory(name: "a", contents: [
+        Directory(name: "a", contents: [File(name: "a", size: 20)]),
+      ]),
+    ]),
+  )
+}

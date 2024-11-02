@@ -1,14 +1,16 @@
 // @related [test](aoc22/gleam/test/aoc22/day7_test.gleam)
 import gleam/int
 import gleam/io
-import gleam/list.{Continue, Stop}
-import gleam/option.{None, Some}
+import gleam/list
 import gleam/string
 
 pub type FileSystem {
   File(name: String, size: Int)
   Directory(name: String, contents: List(FileSystem))
 }
+
+pub type Location =
+  List(String)
 
 pub type Command {
   Ls(contents: List(FileSystem))
@@ -26,13 +28,13 @@ pub fn filesystem_size(file_system: FileSystem) -> Int {
 }
 
 pub fn build_file_system(cli: List(String)) -> FileSystem {
-  parse_cli(cli, Directory(name: "/", contents: []), "/")
+  parse_cli(cli, Directory(name: "/", contents: []), [])
 }
 
 pub fn parse_cli(
   cli: List(String),
   current_fs: FileSystem,
-  current_location: String,
+  current_location: Location,
 ) -> FileSystem {
   case cli {
     [] -> current_fs
@@ -48,74 +50,46 @@ pub fn parse_cli(
 fn run_command(
   command: Command,
   file_system: FileSystem,
-  location: String,
-) -> #(FileSystem, String) {
+  location: Location,
+) -> #(FileSystem, Location) {
   case command {
-    Cd(dir) -> #(file_system, change_directory(file_system, location, dir))
-    Ls(contents) -> #(set_contents(file_system, location, contents), location)
+    Cd(dir) -> #(file_system, change_directory(location, dir))
+    Ls(contents) -> #(
+      set_contents(file_system, list.drop(location, 1), contents),
+      location,
+    )
   }
 }
 
-fn change_directory(
-  file_system: FileSystem,
-  location: String,
-  new_location: String,
-) -> String {
+fn change_directory(location: Location, new_location: String) -> Location {
   case new_location {
-    ".." ->
-      case find_parent_directory(file_system, location) {
-        Some(name) -> name
-        None -> {
-          io.debug(file_system)
-          io.debug(location)
-          panic
-        }
-      }
-    _ -> new_location
+    ".." -> location |> list.reverse() |> list.drop(1) |> list.reverse()
+    _ -> list.append(location, [new_location])
   }
-}
-
-fn find_parent_directory(file_system: FileSystem, location: String) {
-  let assert Directory(name: name, contents: contents) = file_system
-  let subdirs =
-    list.filter(contents, keeping: fn(f) {
-      case f {
-        Directory(..) -> True
-        _ -> False
-      }
-    })
-  list.fold_until(over: subdirs, from: None, with: fn(acc, d) {
-    let assert Directory(name: subdir_name, ..) = d
-    case subdir_name == location {
-      True -> Stop(Some(name))
-      False -> {
-        case find_parent_directory(d, location) {
-          Some(name) -> Stop(Some(name))
-          None -> Continue(acc)
-        }
-      }
-    }
-  })
 }
 
 fn set_contents(
   file_system: FileSystem,
-  location: String,
+  location: Location,
   new_contents: List(FileSystem),
 ) -> FileSystem {
   case file_system {
-    Directory(name: name, contents: contents) ->
-      case name == location {
-        True -> Directory(name: name, contents: new_contents)
-        False ->
-          Directory(
-            name: name,
-            contents: list.map(contents, fn(c) {
-              set_contents(c, location, new_contents)
-            }),
-          )
-      }
     File(..) -> file_system
+    Directory(name: name, contents: contents) -> {
+      case location {
+        [] -> Directory(name: name, contents: new_contents)
+        [next, ..remaining] -> {
+          let updated_contents =
+            list.map(contents, with: fn(fs) {
+              case fs.name == next {
+                True -> set_contents(fs, remaining, new_contents)
+                False -> fs
+              }
+            })
+          Directory(name: name, contents: updated_contents)
+        }
+      }
+    }
   }
 }
 
