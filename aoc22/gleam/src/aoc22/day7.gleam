@@ -212,12 +212,16 @@ pub fn part_two(file_system: FileSystem) -> Int {
   let assert Directory(size: Some(used_space), ..) = file_system
   let unused_space = total_size - used_space
   let required_to_be_deleted = required_space - unused_space
-  let possible_dirs = find_directories(file_system, with: fn (fs) { directory_larger_than(fs, required_to_be_deleted)})
-  let assert [Directory(size: Some(size), ..), ..] = list.sort(possible_dirs, by: fn (a, b) {
-    let assert Directory(size: Some(sa), ..) = a
-    let assert Directory(size: Some(sb), ..) = b
-int.compare(sa, sb)
-  })
+  let possible_dirs =
+    find_directories(file_system, with: fn(fs) {
+      directory_larger_than(fs, required_to_be_deleted)
+    })
+  let assert [Directory(size: Some(size), ..), ..] =
+    list.sort(possible_dirs, by: fn(a, b) {
+      let assert Directory(size: Some(sa), ..) = a
+      let assert Directory(size: Some(sb), ..) = b
+      int.compare(sa, sb)
+    })
   size
 }
 

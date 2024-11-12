@@ -28,7 +28,10 @@ fn input_from_file(
 }
 
 pub fn main() {
-  let assert [day] = argv.load().arguments
+  let day = case argv.load().arguments {
+    [day] -> day
+    _ -> panic as { "Usage: gleam run <day>" }
+  }
 
   let input_file =
     "../input/day"
@@ -37,7 +40,13 @@ pub fn main() {
 
   let input = case input_from_file(input_file) {
     Ok(lines) -> lines
-    _ -> panic as { "Can't read file " |> string.append(input_file) }
+    _ ->
+      panic as {
+        "Can't read file "
+        |> string.append(input_file)
+        |> string.append(" for requested day ")
+        |> string.append(day)
+      }
   }
 
   case day {
