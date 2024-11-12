@@ -1,5 +1,6 @@
 import aoc22/day6
 import aoc22/day7
+import aoc22/day8
 import argv
 import file_streams/file_stream
 import file_streams/file_stream_error
@@ -52,6 +53,7 @@ pub fn main() {
   case day {
     "6" -> day6.main(input)
     "7" -> day7.main(input)
+    "8" -> day8.main(input)
     _ -> panic
   }
   |> io.debug()
