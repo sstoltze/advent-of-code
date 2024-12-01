@@ -20,5 +20,5 @@ pub fn run_test() {
   |> string.trim()
   |> string.split("\n")
   |> day1.run()
-  |> should.equal(#(11, 0))
+  |> should.equal(#(11, 31))
 }
