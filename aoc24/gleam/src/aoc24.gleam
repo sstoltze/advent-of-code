@@ -1,3 +1,4 @@
+import argv
 import file_streams/file_stream
 import file_streams/file_stream_error
 import gleam/io
@@ -6,6 +7,7 @@ import gleam/result
 import gleam/string
 
 import aoc24/day1
+import aoc24/day2
 
 fn read_lines(
   stream: file_stream.FileStream,
@@ -27,6 +29,31 @@ fn input_from_file(
 }
 
 pub fn main() {
-  let assert Ok(input) = input_from_file("../input/day1.txt")
-  day1.run(input) |> io.debug()
+  let day = case argv.load().arguments {
+    [day] -> day
+    _ -> panic as { "Usage: gleam run <day>" }
+  }
+
+  let input_file =
+    "../input/day"
+    |> string.append(day)
+    |> string.append(".txt")
+
+  let input = case input_from_file(input_file) {
+    Ok(lines) -> lines
+    _ ->
+      panic as {
+        "Can't read file "
+        |> string.append(input_file)
+        |> string.append(" for requested day ")
+        |> string.append(day)
+      }
+  }
+
+  case day {
+    "1" -> day1.run(input)
+    "2" -> day2.run(input)
+    _ -> panic
+  }
+  |> io.debug()
 }
