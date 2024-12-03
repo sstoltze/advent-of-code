@@ -8,6 +8,7 @@ import gleam/string
 
 import aoc24/day1
 import aoc24/day2
+import aoc24/day3
 
 fn read_lines(
   stream: file_stream.FileStream,
@@ -53,6 +54,7 @@ pub fn main() {
   case day {
     "1" -> day1.run(input)
     "2" -> day2.run(input)
+    "3" -> day3.run(input)
     _ -> panic
   }
   |> io.debug()
