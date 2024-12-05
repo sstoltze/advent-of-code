@@ -1,6 +1,5 @@
 import gleam/dict
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/string
 
@@ -72,6 +71,6 @@ fn find_in_array(array: Array, letter: String) -> List(Letter) {
 
 pub fn run(input: List(String)) -> #(Int, Int) {
   let array = parse_array(input)
-  let xmases = find(array, "XMAS") |> io.debug()
+  let xmases = find(array, "XMAS")
   #(list.length(xmases), 0)
 }
