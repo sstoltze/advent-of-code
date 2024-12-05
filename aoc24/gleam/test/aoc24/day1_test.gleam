@@ -8,7 +8,6 @@ pub fn main() {
   gleeunit.main()
 }
 
-// gleeunit test functions end in `_test`
 pub fn run_test() {
   "
 3   4
