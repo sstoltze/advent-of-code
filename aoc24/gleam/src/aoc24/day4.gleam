@@ -86,9 +86,31 @@ fn is_straight_line(word: Word) -> Bool {
   }
 }
 
+fn is_diagonal(word: Word) -> Bool {
+  let assert [#(mx, my, "M"), _, #(sx, sy, "S")] = word
+  int.absolute_value(sx - mx) == 2 && int.absolute_value(sy - my) == 2
+}
+
+fn gather_xes(mases: List(Word)) -> List(Word) {
+  list.fold(mases, #([], []), fn(acc, mas) {
+    let #(result, seen_a_coordinates) = acc
+    let assert [_, #(x, y, "A"), _] = mas
+    case list.find(seen_a_coordinates, fn(a) { a == #(x, y) }) {
+      Ok(_) -> #([mas, ..result], seen_a_coordinates)
+      Error(_) -> #(result, [#(x, y), ..seen_a_coordinates])
+    }
+  })
+  |> pair.first()
+}
+
 pub fn run(input: List(String)) -> #(Int, Int) {
   let array = parse_array(input)
   let xmases = find(array, "XMAS") |> list.filter(is_straight_line)
+  let x_mases =
+    find(array, "MAS")
+    |> list.filter(is_straight_line)
+    |> list.filter(is_diagonal)
+    |> gather_xes
 
-  #(list.length(xmases), 0)
+  #(list.length(xmases), list.length(x_mases))
 }

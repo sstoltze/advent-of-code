@@ -22,5 +22,5 @@ MXMXAXMASX"
   |> string.trim()
   |> string.split("\n")
   |> day4.run()
-  |> should.equal(#(18, 0))
+  |> should.equal(#(18, 9))
 }
