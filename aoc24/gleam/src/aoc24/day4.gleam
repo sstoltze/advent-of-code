@@ -1,6 +1,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/pair
 import gleam/string
 
 type Array =
@@ -69,8 +70,25 @@ fn find_in_array(array: Array, letter: String) -> List(Letter) {
   })
 }
 
+fn is_straight_line(word: Word) -> Bool {
+  case word {
+    [#(x1, y1, _), #(x2, y2, _), ..rest] ->
+      list.fold_until(rest, #(True, #(x2, y2)), fn(acc, letter) {
+        let #(_, #(x, y)) = acc
+        let #(a, b, _) = letter
+        case { a - x == x2 - x1 } && { b - y == y2 - y1 } {
+          True -> list.Continue(#(True, #(a, b)))
+          False -> list.Stop(#(False, #(a, b)))
+        }
+      })
+      |> pair.first()
+    _ -> True
+  }
+}
+
 pub fn run(input: List(String)) -> #(Int, Int) {
   let array = parse_array(input)
-  let xmases = find(array, "XMAS")
+  let xmases = find(array, "XMAS") |> list.filter(is_straight_line)
+
   #(list.length(xmases), 0)
 }
