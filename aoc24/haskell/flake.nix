@@ -25,22 +25,11 @@
       );
     in
     {
-      # nix-shell -p 'haskellPackages.ghcWithPackages (pkgs: with pkgs; [ cabal-install ])'
-      # cabal update
-      # cabal init
-      devShells = forEachSystem (
-        { pkgs, ... }:
-        {
-          default = pkgs.mkShell {
-            packages = [ (pkgs.haskellPackages.ghcWithPackages (pkgs: with pkgs; [ cabal-install ])) ];
-            inputsFrom = [
-              (pkgs.haskellPackages.developPackage {
-                root = ./.;
-                returnShellEnv = true;
-              })
-            ];
-          };
-        }
-      );
+      # Based on https://abhinavsarkar.net/posts/nix-for-haskell/
+      devShells = forEachSystem
+        (
+          { pkgs, ... }: { default = pkgs.callPackage ./shell.nix { }; }
+        );
+      packages = forEachSystem ({ pkgs, ... }: { default = pkgs.callPackage ./. { }; });
     };
 }
