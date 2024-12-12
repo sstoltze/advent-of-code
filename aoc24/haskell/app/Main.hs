@@ -1,6 +1,7 @@
 module Main where
 
-import Day9
+import Aoc24.Day9
+import Data.Text
 
 main :: IO ()
-main = putStrLn $ "Hello, " ++ Day9.run
+main = putStrLn $ "Hello, " ++ Data.Text.unpack Aoc24.Day9.run

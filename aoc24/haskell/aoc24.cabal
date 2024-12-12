@@ -17,7 +17,7 @@ common warnings
   ghc-options: -Wall
 
 common deps
-  build-depends: base ^>=4.18.2.1
+  build-depends: base ^>=4.18.2.1, text, parsec
 
 executable aoc24
   import:           warnings, deps
@@ -29,7 +29,7 @@ executable aoc24
 library
   import:           deps
   hs-source-dirs:   lib
-  exposed-modules:  Day9
+  exposed-modules:  Aoc24.Day9
   default-language: Haskell2010
 
 test-suite tests
