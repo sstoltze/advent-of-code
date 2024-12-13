@@ -1,6 +1,5 @@
 import gleam/dict.{type Dict}
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/pair
@@ -26,9 +25,35 @@ pub fn run(input: List(String)) -> #(Int, Int) {
       |> list.map(middle_element)
       |> list.fold(0, int.add),
     invalid_updates
+      |> list.map(fn(update) { make_valid(update, restrictions) })
       |> list.map(middle_element)
       |> list.fold(0, int.add),
   )
+}
+
+pub fn make_valid(update: Update, restrictions: Restrictions) -> Update {
+  update
+  |> list.fold([], fn(seen, page) {
+    case
+      list.find(seen, fn(before_this) {
+        case dict.get(restrictions, before_this) {
+          Error(_) -> False
+          Ok(before_this_must_be_after_these) ->
+            list.contains(before_this_must_be_after_these, page)
+        }
+      })
+    {
+      Error(Nil) -> list.append(seen, [page])
+      Ok(page_must_be_before_this) ->
+        seen
+        |> list.fold([], fn(acc, p) {
+          case p == page_must_be_before_this {
+            True -> list.append(acc, [page, p])
+            False -> list.append(acc, [p])
+          }
+        })
+    }
+  })
 }
 
 pub fn is_valid_update(update: Update, restrictions: Restrictions) -> Bool {

@@ -31,6 +31,42 @@ pub fn middle_element_test() {
   day5.middle_element([1]) |> should.equal(1)
 }
 
+pub fn make_valid_test() {
+  let #(restrictions, _) =
+    "47|53
+97|13
+97|61
+97|47
+75|29
+61|13
+75|53
+29|13
+97|29
+53|29
+61|53
+97|53
+61|29
+47|13
+75|47
+97|75
+47|61
+75|61
+47|29
+75|13
+53|13
+
+47,53"
+    |> string.split("\n")
+    |> day5.parse_input()
+
+  day5.make_valid([75, 97, 47, 61, 53], restrictions)
+  |> should.equal([97, 75, 47, 61, 53])
+  day5.make_valid([61, 13, 29], restrictions)
+  |> should.equal([61, 29, 13])
+  day5.make_valid([97, 13, 75, 29, 47], restrictions)
+  |> should.equal([97, 75, 47, 29, 13])
+}
+
 pub fn run_test() {
   "47|53
 97|13
