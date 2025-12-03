@@ -35,4 +35,15 @@ L82
     refute Aoc25.Day2.really_invalid?(21_212_121_212)
     refute Aoc25.Day2.really_invalid?(1_010_101)
   end
+
+  test "day 3" do
+    input = ~S<
+987654321111111
+811111111111119
+234234234234278
+818181911112111
+>
+    assert 357 == Aoc25.Day3.part_1(input)
+    assert 3_121_910_778_619 = Aoc25.Day3.part_2(input)
+  end
 end

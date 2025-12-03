@@ -1,6 +1,4 @@
 defmodule Aoc25.Day2 do
-  require Integer
-
   def parse(string) do
     string
     |> String.trim()
