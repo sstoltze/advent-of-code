@@ -3,6 +3,7 @@ import gleeunit
 import aoc25/day1
 import aoc25/day4
 import aoc25/day5
+import aoc25/day6
 
 pub fn main() -> Nil {
   gleeunit.main()
@@ -56,4 +57,13 @@ pub fn day_5_test() {
 32"
   assert day5.part_1(input) == 3
   assert day5.part_2(input) == 14
+}
+
+pub fn day_6_test() {
+  let input =
+    "123 328  51 64
+ 45 64  387 23
+  6 98  215 314
+*   +   *   +"
+  assert day6.part_1(input) == 4_277_556
 }
