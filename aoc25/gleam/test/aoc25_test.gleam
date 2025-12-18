@@ -66,4 +66,5 @@ pub fn day_6_test() {
   6 98  215 314
 *   +   *   +"
   assert day6.part_1(input) == 4_277_556
+  assert day6.part_2(input) == 3_263_827
 }
